@@ -1,0 +1,44 @@
+{
+	"compilerOptions": {
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"target": "esnext",
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"noEmit": true,
+		"esModuleInterop": true,
+		"module": "preserve",
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		"noUnusedLocals": true,
+		"removeComments": true,
+		"outDir": "dist",
+		"sourceMap": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"exactOptionalPropertyTypes": false,
+		"noImplicitOverride": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedParameters": true,
+		"pretty": true,
+		"strictNullChecks": true,
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "preserve",
+		"verbatimModuleSyntax": true,
+		"incremental": true,
+		"checkJs": true,
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		"paths": {
+			"@/*": ["./*"]
+		}
+	},
+	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "eslint.config.js"],
+	"exclude": ["node_modules"]
+}
