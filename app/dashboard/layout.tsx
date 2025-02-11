@@ -1,7 +1,7 @@
 'use client';
 
-import { MainHeader } from '@/components/main-header';
-import { MainSidebar } from '@/components/main-sidebar';
+import { MainHeader } from '@/app/dashboard/header';
+import { MainSidebar } from '@/app/dashboard/sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 export default function DashboardLayout({ children }: { readonly children: React.ReactNode }) {

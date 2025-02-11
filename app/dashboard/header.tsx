@@ -31,7 +31,7 @@ export function MainHeader() {
 					<Button className="size-9" onClick={toggleSidebar} size="icon" variant="ghost">
 						<PanelLeft className="size-5" />
 					</Button>
-					<div className="flex items-center gap-2">
+					<div className="hidden items-center gap-2 md:flex">
 						<Breadcrumb>
 							<BreadcrumbList>
 								<BreadcrumbItem>

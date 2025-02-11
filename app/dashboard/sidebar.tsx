@@ -27,8 +27,8 @@ import {
 } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Button } from './ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { Button } from '../../components/ui/button';
 
 export function MainSidebar() {
 	const { state } = useSidebar();
@@ -66,88 +66,88 @@ export function MainSidebar() {
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard">
 										<LayoutDashboard className="size-4" />
 										<span>Overview</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/leads"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/leads">
 										<UserRound className="size-4" />
 										<span>Leads</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/ticket-overview"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/ticket-overview">
 										<Ticket className="size-4" />
 										<span>Ticket Overview</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/tickets"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/tickets">
 										<Ticket className="size-4" />
 										<span>Tickets</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/manage-user"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/manage-user">
 										<UserRound className="size-4" />
 										<span>Manage User</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/teams"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/teams">
 										<Users className="size-4" />
 										<span>Teams</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/announcement"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/announcement">
 										<Megaphone className="size-4" />
 										<span>Announcement</span>
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link
-										className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
-										href="/dashboard/audit-logs"
-									>
+								<SidebarMenuButton
+									asChild
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+								>
+									<Link href="/dashboard/audit-logs">
 										<ScrollText className="size-4" />
 										<span>Audit Logs</span>
 									</Link>

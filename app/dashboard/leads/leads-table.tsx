@@ -7,14 +7,15 @@ import {
 	getSortedRowModel,
 	useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDownUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import * as React from 'react';
+import { ArrowDownUp } from 'lucide-react';
+import { useState } from 'react';
 
+import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-import type { ColumnDef, PaginationState, SortingState } from '@tanstack/react-table';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
 type Status = (typeof statusOptions)[number];
 
@@ -192,24 +193,25 @@ const columns: ColumnDef<Lead>[] = [
 ];
 
 export function LeadsTable() {
-	const [sorting, setSorting] = React.useState<SortingState>([]);
-	const [pagination, setPagination] = React.useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: 10,
-	});
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [itemsPerPage, setItemsPerPage] = useState(10);
 
 	const table = useReactTable({
 		data: leads,
 		columns,
 		state: {
 			sorting,
-			pagination,
+			pagination: {
+				pageIndex: currentPage - 1,
+				pageSize: itemsPerPage,
+			},
 		},
 		onSortingChange: setSorting,
-		onPaginationChange: setPagination,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
+		pageCount: Math.ceil(leads.length / itemsPerPage),
 	});
 
 	return (
@@ -250,62 +252,16 @@ export function LeadsTable() {
 					</TableBody>
 				</Table>
 			</div>
-			<div className="flex items-center justify-center gap-8 px-2 py-4">
-				<div className="flex items-center space-x-2">
-					<p className="text-sm font-medium">Rows per page</p>
-					<Select
-						onValueChange={(value) => {
-							table.setPageSize(Number(value));
-						}}
-						value={pagination.pageSize.toString()}
-					>
-						<SelectTrigger className="w-16">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{[5, 10, 20, 30, 40, 50].map((pageSize) => (
-								<SelectItem key={pageSize} value={pageSize.toString()}>
-									{pageSize}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				<div className="flex items-center justify-center gap-8">
-					<p className="text-sm font-medium">
-						Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-					</p>
-					<div className="flex items-center space-x-1">
-						<Button
-							disabled={!table.getCanPreviousPage()}
-							onClick={() => table.setPageIndex(0)}
-							size="icon"
-							variant="outline"
-						>
-							<ChevronsLeft className="size-4" />
-						</Button>
-						<Button
-							disabled={!table.getCanPreviousPage()}
-							onClick={() => table.previousPage()}
-							size="icon"
-							variant="outline"
-						>
-							<ChevronLeft className="size-4" />
-						</Button>
-						<Button disabled={!table.getCanNextPage()} onClick={() => table.nextPage()} size="icon" variant="outline">
-							<ChevronRight className="size-4" />
-						</Button>
-						<Button
-							disabled={!table.getCanNextPage()}
-							onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-							size="icon"
-							variant="outline"
-						>
-							<ChevronsRight className="size-4" />
-						</Button>
-					</div>
-				</div>
-			</div>
+			<Pagination
+				currentPage={currentPage}
+				itemsPerPage={itemsPerPage}
+				onItemsPerPageChange={(value) => {
+					setItemsPerPage(value);
+					setCurrentPage(1);
+				}}
+				onPageChange={setCurrentPage}
+				totalPages={table.getPageCount()}
+			/>
 		</div>
 	);
 }
