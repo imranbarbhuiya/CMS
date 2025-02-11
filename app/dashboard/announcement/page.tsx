@@ -114,7 +114,7 @@ export default function AnnouncementPage() {
 								)}
 							/>
 							<div className="-mx-4 border-t border-solid border-border p-4">
-								<Button className="w-full bg-blue-500 hover:bg-blue-600" type="submit">
+								<Button className="w-full bg-themecolor-500 hover:bg-themecolor-600" type="submit">
 									Send Notification
 								</Button>
 							</div>

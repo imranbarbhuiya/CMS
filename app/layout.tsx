@@ -1,5 +1,7 @@
 import { Geist } from 'next/font/google';
 
+import { Toaster } from '@/components/ui/sonner';
+
 import { Providers } from './providers';
 
 import type { Metadata } from 'next';
@@ -22,8 +24,11 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={`${geist.className} antialiased`}>
-				<Providers>{children}</Providers>
+			<body className={`${geist.className} rose antialiased`}>
+				<Providers>
+					<Toaster />
+					{children}
+				</Providers>
 			</body>
 		</html>
 	);

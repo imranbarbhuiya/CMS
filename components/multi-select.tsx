@@ -1,19 +1,11 @@
-import { X } from 'lucide-react';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
 import * as React from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-	DropdownMenu,
-	DropdownMenuCheckboxItem,
-	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-
-import type { DropdownMenuCheckboxItemProps } from '@radix-ui/react-dropdown-menu';
 
 export interface Option {
 	label: string;
@@ -22,6 +14,8 @@ export interface Option {
 
 interface MultiSelectProps {
 	readonly className?: string;
+	readonly description?: string;
+	readonly label?: string;
 	readonly onChange: (values: string[]) => void;
 	readonly options: Option[];
 	readonly placeholder?: string;
@@ -32,20 +26,24 @@ export function MultiSelect({
 	options,
 	selected,
 	onChange,
-	placeholder = 'Select items...',
+	placeholder = 'Select options...',
+	description,
+	label,
 	className,
 }: MultiSelectProps) {
 	const handleUnselect = (item: string) => {
-		onChange(selected.filter((selectedItem) => selectedItem !== item));
+		const newSelected = selected.filter((selectedItem) => selectedItem !== item);
+		onChange(newSelected);
 	};
 
-	const handleCheckedChange = (value: string, checked: DropdownMenuCheckboxItemProps['checked']) => {
-		if (checked) onChange([...selected, value]);
-		else onChange(selected.filter((item) => item !== value));
+	const handleSelect = (value: string) => {
+		const newSelected = selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value];
+		onChange(newSelected);
 	};
 
 	return (
 		<div className="flex w-full flex-col gap-2">
+			{label && <div className="text-sm font-medium">{label}</div>}
 			{selected.length > 0 && (
 				<div className="flex flex-wrap gap-1">
 					{selected.map((item) => {
@@ -72,30 +70,37 @@ export function MultiSelect({
 					})}
 				</div>
 			)}
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button className={cn('w-full justify-start text-left font-normal', className)} variant="outline">
+			<Popover>
+				<PopoverTrigger asChild>
+					<Button className={cn('w-full justify-between', className)} role="combobox" variant="outline">
 						{selected.length === 0 ? (
 							<span className="text-muted-foreground">{placeholder}</span>
 						) : (
 							<span>{`${selected.length} selected`}</span>
 						)}
+						<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
 					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="start" className="w-56">
-					<DropdownMenuLabel>Options</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					{options.map((option) => (
-						<DropdownMenuCheckboxItem
-							checked={selected.includes(option.value)}
-							key={option.value}
-							onCheckedChange={(checked) => handleCheckedChange(option.value, checked)}
-						>
-							{option.label}
-						</DropdownMenuCheckboxItem>
-					))}
-				</DropdownMenuContent>
-			</DropdownMenu>
+				</PopoverTrigger>
+				<PopoverContent className="w-full p-0">
+					<Command>
+						<CommandInput placeholder="Search options..." />
+						<CommandList>
+							<CommandEmpty>No option found.</CommandEmpty>
+							<CommandGroup>
+								{options.map((option) => (
+									<CommandItem key={option.value} onSelect={() => handleSelect(option.value)} value={option.label}>
+										{option.label}
+										<Check
+											className={cn('ml-auto size-4', selected.includes(option.value) ? 'opacity-100' : 'opacity-0')}
+										/>
+									</CommandItem>
+								))}
+							</CommandGroup>
+						</CommandList>
+					</Command>
+				</PopoverContent>
+			</Popover>
+			{description && <div className="text-sm text-muted-foreground">{description}</div>}
 		</div>
 	);
 }

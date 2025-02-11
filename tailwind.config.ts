@@ -1,11 +1,28 @@
+// @ts-expect-error - internal import
+import { default as flattenColorPalette } from 'tailwindcss/lib/util/flattenColorPalette';
+import plugin from 'tailwindcss/plugin';
 import animatePlugin from 'tailwindcss-animate';
 
 import type { Config } from 'tailwindcss';
 
+const addVariablesForColors = plugin(({ addBase, theme }) => {
+	const colors = theme('colors')!;
+	const allColors = flattenColorPalette({
+		rose: colors.rose,
+		blue: colors.blue,
+	});
+	const newVars = Object.fromEntries(Object.entries(allColors).map(([key, val]) => [`--${key}`, val]));
+
+	addBase({
+		// @ts-expect-error - CSS variable
+		':root': newVars,
+	});
+});
+
 export default {
 	darkMode: ['class'],
 	content: ['./components/**/*.{js,ts,jsx,tsx,mdx}', './app/**/*.{js,ts,jsx,tsx,mdx}'],
-	plugins: [animatePlugin],
+	plugins: [addVariablesForColors, animatePlugin],
 	theme: {
 		extend: {
 			colors: {
@@ -58,6 +75,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))',
+				},
+				themecolor: {
+					50: 'var(--theme-color-50)',
+					100: 'var(--theme-color-100)',
+					200: 'var(--theme-color-200)',
+					300: 'var(--theme-color-300)',
+					400: 'var(--theme-color-400)',
+					500: 'var(--theme-color-500)',
+					600: 'var(--theme-color-600)',
+					700: 'var(--theme-color-700)',
+					800: 'var(--theme-color-800)',
+					900: 'var(--theme-color-900)',
 				},
 			},
 		},

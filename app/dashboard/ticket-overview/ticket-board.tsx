@@ -13,7 +13,7 @@ interface TicketBoardProps {
 
 const statusGroups: { border: string; color: string; label: string; value: Ticket['status'] }[] = [
 	{ label: 'Pending', value: 'pending', border: 'border-yellow-500', color: 'text-yellow-500' },
-	{ label: 'Follow-up', value: 'follow-up', border: 'border-blue-600', color: 'text-blue-600' },
+	{ label: 'Follow-up', value: 'follow-up', border: 'border-themecolor-600', color: 'text-themecolor-600' },
 	{ label: 'Completed', value: 'completed', border: 'border-green-600', color: 'text-green-600' },
 ];
 

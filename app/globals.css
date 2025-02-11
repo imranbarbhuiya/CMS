@@ -41,7 +41,33 @@ body {
 		--sidebar-accent-foreground: 240 5.9% 10%;
 		--sidebar-border: 220 13% 91%;
 		--sidebar-ring: 217.2 91.2% 59.8%;
+		--theme-color-50: var(--blue-50);
+		--theme-color-100: var(--blue-100);
+		--theme-color-200: var(--blue-200);
+		--theme-color-300: var(--blue-300);
+		--theme-color-400: var(--blue-400);
+		--theme-color-500: var(--blue-500);
+		--theme-color-600: var(--blue-600);
+		--theme-color-700: var(--blue-700);
+		--theme-color-800: var(--blue-800);
+		--theme-color-900: var(--blue-900);
+		--theme-color-950: var(--blue-950);
 	}
+
+	.rose {
+		--theme-color-50: var(--rose-50);
+		--theme-color-100: var(--rose-100);
+		--theme-color-200: var(--rose-200);
+		--theme-color-300: var(--rose-300);
+		--theme-color-400: var(--rose-400);
+		--theme-color-500: var(--rose-500);
+		--theme-color-600: var(--rose-600);
+		--theme-color-700: var(--rose-700);
+		--theme-color-800: var(--rose-800);
+		--theme-color-900: var(--rose-900);
+		--theme-color-950: var(--rose-950);
+	}
+
 	.dark {
 		--background: 0 0% 3.9%;
 		--foreground: 0 0% 98%;

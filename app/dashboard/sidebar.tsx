@@ -41,7 +41,7 @@ export function MainSidebar() {
 			)}
 			collapsible="icon"
 		>
-			<SidebarHeader className="self-stretch bg-blue-600 p-2">
+			<SidebarHeader className="self-stretch bg-themecolor-600 p-2">
 				{state === 'collapsed' ? (
 					<div className="rounded-lg bg-sidebar-primary p-2">
 						<GalleryVerticalEnd className="size-4 text-sidebar-primary-foreground" />
@@ -68,7 +68,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard">
 										<LayoutDashboard className="size-4" />
@@ -79,7 +79,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/leads">
 										<UserRound className="size-4" />
@@ -90,7 +90,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/ticket-overview">
 										<Ticket className="size-4" />
@@ -101,7 +101,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/tickets">
 										<Ticket className="size-4" />
@@ -112,7 +112,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/manage-user">
 										<UserRound className="size-4" />
@@ -123,7 +123,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/teams">
 										<Users className="size-4" />
@@ -134,7 +134,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/announcement">
 										<Megaphone className="size-4" />
@@ -145,7 +145,7 @@ export function MainSidebar() {
 							<SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
-									className="flex items-center gap-3 transition-all duration-300 hover:bg-blue-50 hover:text-blue-600"
+									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
 								>
 									<Link href="/dashboard/audit-logs">
 										<ScrollText className="size-4" />
@@ -160,12 +160,12 @@ export function MainSidebar() {
 			<SidebarFooter className="self-stretch">
 				<div className="flex items-center gap-2 self-stretch rounded-[6px] p-2">
 					<Avatar className="size-8">
-						<AvatarImage alt="Rahul" src="/images/avatar.jpg" />
-						<AvatarFallback>R</AvatarFallback>
+						<AvatarImage alt="Saleem" src="/images/avatar.jpg" />
+						<AvatarFallback>S</AvatarFallback>
 					</Avatar>
 					<div className="flex flex-[1_0_0] flex-col items-start gap-0.5">
-						<span className="text-ellipsis text-sm font-semibold leading-[100%] text-blue-600">Rahul</span>
-						<span className="text-ellipsis text-xs font-normal leading-4 text-blue-800">Sales</span>
+						<span className="text-ellipsis text-sm font-semibold leading-[100%] text-themecolor-600">Saleem</span>
+						<span className="text-ellipsis text-xs font-normal leading-4 text-themecolor-800">Admin</span>
 					</div>
 				</div>
 				<div className="flex flex-col items-start self-stretch py-2">

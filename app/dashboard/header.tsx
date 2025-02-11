@@ -43,7 +43,7 @@ export function MainHeader() {
 									<Slash className="size-4" />
 								</BreadcrumbSeparator>
 								<BreadcrumbItem>
-									<BreadcrumbPage className="text-sm font-normal leading-5 text-blue-600 hover:text-blue-700">
+									<BreadcrumbPage className="text-sm font-normal leading-5 text-themecolor-600 hover:text-themecolor-700">
 										{currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}
 									</BreadcrumbPage>
 								</BreadcrumbItem>

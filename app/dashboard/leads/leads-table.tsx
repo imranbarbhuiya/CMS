@@ -180,7 +180,7 @@ const columns: ColumnDef<Lead>[] = [
 				<Button
 					className={
 						status === 'Sale Done' || status === 'Payment Pending'
-							? 'bg-blue-600 text-white hover:bg-blue-700'
+							? 'bg-themecolor-600 text-white hover:bg-themecolor-700'
 							: 'text-gray-500'
 					}
 					variant="ghost"
