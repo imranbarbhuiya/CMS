@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -22,13 +23,10 @@ const LoginPage = () => {
 	} = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 	});
+	const router = useRouter();
 
 	const onSubmit = async (_data: LoginFormData) => {
-		try {
-			// TODO: Implement actual login logic here
-		} catch (error) {
-			console.error('Login failed:', error);
-		}
+		router.push('/dashboard/leads');
 	};
 
 	return (
@@ -42,7 +40,11 @@ const LoginPage = () => {
 						Enter your email below to login to your account
 					</p>
 				</div>
-				<form className="flex flex-col items-start gap-4 self-stretch px-6 pb-3" onSubmit={handleSubmit(onSubmit)}>
+				<form
+					className="flex flex-col items-start gap-4 self-stretch px-6 pb-3"
+					id="login-form"
+					onSubmit={handleSubmit(onSubmit, console.error)}
+				>
 					<div className="flex flex-col items-start gap-2 self-stretch">
 						<label className="block text-sm font-medium text-foreground" htmlFor="email">
 							Email
@@ -84,6 +86,7 @@ const LoginPage = () => {
 					<Button
 						aria-label="Sign in to your account"
 						className="flex w-full justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200"
+						form="login-form"
 						type="submit"
 						variant="default"
 					>

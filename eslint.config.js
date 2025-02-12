@@ -35,6 +35,8 @@ export default [
 			],
 			// handled by react-compiler
 			'react/jsx-no-constructed-context-values': 'off',
+			'react/jsx-handler-names': 'off',
+			'react/no-unstable-nested-components': 'off',
 		},
 	},
 	{

@@ -20,6 +20,7 @@ interface MultiSelectProps {
 	readonly options: Option[];
 	readonly placeholder?: string;
 	readonly selected: string[];
+	readonly showBadge?: boolean;
 }
 
 export function MultiSelect({
@@ -30,6 +31,7 @@ export function MultiSelect({
 	description,
 	label,
 	className,
+	showBadge = true,
 }: MultiSelectProps) {
 	const handleUnselect = (item: string) => {
 		const newSelected = selected.filter((selectedItem) => selectedItem !== item);
@@ -44,7 +46,7 @@ export function MultiSelect({
 	return (
 		<div className="flex w-full flex-col gap-2">
 			{label && <div className="text-sm font-medium">{label}</div>}
-			{selected.length > 0 && (
+			{selected.length > 0 && showBadge && (
 				<div className="flex flex-wrap gap-1">
 					{selected.map((item) => {
 						const option = options.find((currentOption) => currentOption.value === item);

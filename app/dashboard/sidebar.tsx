@@ -11,6 +11,7 @@ import {
 	GalleryVerticalEnd,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import {
 	Sidebar,
@@ -32,6 +33,7 @@ import { Button } from '../../components/ui/button';
 
 export function MainSidebar() {
 	const { state } = useSidebar();
+	const router = useRouter();
 
 	return (
 		<Sidebar
@@ -171,6 +173,7 @@ export function MainSidebar() {
 				<div className="flex flex-col items-start self-stretch py-2">
 					<Button
 						className="flex min-w-[64px] items-center justify-center self-stretch rounded-md border border-solid border-border bg-background px-2 py-1.5 text-destructive transition-all duration-300 hover:bg-destructive hover:text-white"
+						onClick={() => router.push('/login')}
 						size="sm"
 						variant="outline"
 					>
