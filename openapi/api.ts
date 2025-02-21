@@ -273,10 +273,10 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		get?: never;
-		put?: never;
 		/** Get my user */
-		post: operations['UserController_getMe'];
+		get: operations['UserController_getMe'];
+		put?: never;
+		post?: never;
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -478,6 +478,42 @@ export interface components {
 			createdAt: string;
 			updatedAt: string;
 		};
+		GetLeadsDto: {
+			total: number;
+			data: {
+				id: string;
+				internalLeadId: string;
+				name: string;
+				email: string;
+				phone: string;
+				subscription: string;
+				billingAddress: string;
+				paymentMethod: string;
+				/**
+				 * @example 'Blue Company' | 'Red Company'
+				 * @enum {string}
+				 */
+				leadSource: 'Blue Company' | 'Red Company';
+				/**
+				 * @example 'New' | 'Customer Not Interested' | 'Voice Mail' | 'Not Reachable' | 'Duplicate Lead' | 'Sale Done' | 'Payment Pending'
+				 * @enum {string}
+				 */
+				status:
+					| 'New'
+					| 'Customer Not Interested'
+					| 'Voice Mail'
+					| 'Not Reachable'
+					| 'Duplicate Lead'
+					| 'Sale Done'
+					| 'Payment Pending';
+				/** @description Refers to User */
+				assignedTo?: string | null;
+				/** @description Refers to Ticket */
+				ticketId?: string | null;
+				createdAt: string;
+				updatedAt: string;
+			}[];
+		};
 		UpdateLeadDto: {
 			/**
 			 * @example 'New' | 'Customer Not Interested' | 'Voice Mail' | 'Not Reachable' | 'Duplicate Lead' | 'Sale Done' | 'Payment Pending'
@@ -538,11 +574,10 @@ export interface components {
 			email: string;
 			password: string;
 			/**
-			 * @example 'Manager' | 'User'
+			 * @example 'SuperAdmin' | 'Manager' | 'User'
 			 * @enum {string}
 			 */
-			role?: 'Manager' | 'User';
-			superAdmin?: boolean;
+			role?: 'SuperAdmin' | 'Manager' | 'User';
 			/** @description Refers to Team */
 			team?: string | null;
 			accessToken?: string | null;
@@ -560,11 +595,10 @@ export interface components {
 			email: string;
 			password: string;
 			/**
-			 * @example 'Manager' | 'User'
+			 * @example 'SuperAdmin' | 'Manager' | 'User'
 			 * @enum {string}
 			 */
-			role?: 'Manager' | 'User';
-			superAdmin?: boolean;
+			role?: 'SuperAdmin' | 'Manager' | 'User';
 			/** @description Refers to Team */
 			team?: string | null;
 			accessToken?: string | null;
@@ -575,12 +609,11 @@ export interface components {
 			email?: string;
 			password?: string;
 			name?: string;
-			superAdmin?: boolean;
 			/**
-			 * @example 'Manager' | 'User'
+			 * @example 'SuperAdmin' | 'Manager' | 'User'
 			 * @enum {string}
 			 */
-			role?: 'Manager' | 'User';
+			role?: 'SuperAdmin' | 'Manager' | 'User';
 		};
 		AnnouncementsDto: {
 			id: string;
@@ -672,7 +705,11 @@ export interface operations {
 	};
 	LeadController_getAll: {
 		parameters: {
-			query?: never;
+			query?: {
+				search?: string;
+				page?: number;
+				limit?: number;
+			};
 			header: {
 				/** @description Bearer <Token> */
 				Authorization: string;
@@ -687,7 +724,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['GetLeadsDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {

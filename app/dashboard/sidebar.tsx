@@ -1,5 +1,7 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteCookie } from 'cookies-next';
 import {
 	LayoutDashboard,
 	UserRound,
@@ -27,6 +29,7 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from '@/components/ui/sidebar';
+import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils';
 
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
@@ -35,6 +38,22 @@ import { Button } from '../../components/ui/button';
 export function MainSidebar() {
 	const { state } = useSidebar();
 	const router = useRouter();
+	const queryClient = useQueryClient();
+
+	const { data: user } = useUser();
+
+	const { mutate: handleLogout, isPending } = useMutation({
+		mutationFn: async () => {
+			await deleteCookie('token');
+		},
+		onSuccess: () => {
+			queryClient.clear();
+			router.push('/login');
+		},
+		onError: (error) => {
+			console.error('Error during logout:', error);
+		},
+	});
 
 	return (
 		<Sidebar
@@ -165,21 +184,21 @@ export function MainSidebar() {
 				<div className="flex items-center gap-2 self-stretch rounded-[6px] p-2">
 					<Avatar className="size-8">
 						<AvatarImage alt="Saleem" src="/images/avatar.jpg" />
-						<AvatarFallback>S</AvatarFallback>
+						<AvatarFallback>{user?.name[0]}</AvatarFallback>
 					</Avatar>
 					<div className="flex flex-[1_0_0] flex-col items-start gap-0.5">
-						<span className="text-ellipsis text-sm font-semibold leading-[100%] text-themecolor-600">Saleem</span>
-						<span className="text-ellipsis text-xs font-normal leading-4 text-themecolor-800">Admin</span>
+						<span className="text-ellipsis text-sm font-semibold leading-[100%] text-themecolor-600">{user?.name}</span>
+						<span className="text-ellipsis text-xs font-normal leading-4 text-themecolor-800">{user?.role}</span>
 					</div>
 				</div>
 				<div className="flex flex-col items-start self-stretch py-2">
 					<Button
 						className="flex min-w-[64px] items-center justify-center self-stretch rounded-md border border-solid border-border bg-background px-2 py-1.5 text-destructive transition-all duration-300 hover:bg-destructive hover:text-white"
-						onClick={() => router.push('/login')}
+						onClick={() => handleLogout()}
 						size="sm"
 						variant="outline"
 					>
-						Logout <LogOut className="size-4" />
+						{isPending ? 'Logging out...' : 'Logout'} <LogOut className="size-4" />
 					</Button>
 				</div>
 			</SidebarFooter>

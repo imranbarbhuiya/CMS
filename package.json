@@ -9,10 +9,9 @@
 		"start": "next start",
 		"lint": "next lint",
 		"format": "prettier --write .",
-		"api:generate:dev": "bunx openapi-typescript http://127.0.0.1:3001/docs-yaml --output openapi/core-api.ts && prettier --write --cache openapi/*.ts"
+		"api:generate:dev": "bunx openapi-typescript http://127.0.0.1:3001/docs-yaml --output openapi/api.ts && prettier --write --cache openapi/*.ts"
 	},
 	"dependencies": {
-		"openapi-fetch": "^0.13.4",
 		"@hookform/resolvers": "^4.1.0",
 		"@radix-ui/react-avatar": "^1.1.3",
 		"@radix-ui/react-checkbox": "^1.1.4",
@@ -34,10 +33,13 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "1.0.0",
+		"cookies-next": "^5.1.0",
+		"flags": "^3.1.1",
 		"lucide-react": "^0.475.0",
 		"motion": "^12.4.3",
 		"next": "15.1.6",
 		"next-themes": "^0.4.4",
+		"openapi-fetch": "^0.13.4",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-hook-form": "^7.54.2",

@@ -16,173 +16,98 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToken } from '@/hooks/use-token';
+import { Api } from '@/lib/fetch';
 
+import type { components } from '@/openapi/api';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
-interface Lead {
-	email: string;
-	id: number;
-	leadId: string;
-	mobile: string;
-	name: string;
-	status: Status;
-}
+type LeadDto = components['schemas']['LeadDto'];
 
 const statusOptions = [
-	'Status',
-	'Not Interested',
-	'Voice Mial',
+	'New',
+	'Customer Not Interested',
+	'Voice Mail',
 	'Not Reachable',
-	'Duplicate lead',
+	'Duplicate Lead',
 	'Sale Done',
 	'Payment Pending',
-	'Invalid Lead',
 ] as const;
 
 type Status = (typeof statusOptions)[number];
 
-const updateLeadStatus = async (leadId: number, status: Status): Promise<Lead> => {
-	void new Promise((resolve) => {
-		setTimeout(resolve, 500);
-	});
-	return { leadId: `#${leadId}`, id: leadId, status } as Lead;
-};
-
-const fetchLeads = (): Lead[] => [
-	{
-		id: 1,
-		name: 'Emily Carter',
-		email: 'emily.carter@example.com',
-		mobile: '+ 1 299839893',
-		leadId: '#21231',
-		status: 'Status',
-	},
-	{
-		id: 2,
-		name: 'Priya Sharma',
-		email: 'priya.sharma@email.com',
-		mobile: '23445636454',
-		leadId: '#21232',
-		status: 'Status',
-	},
-	{
-		id: 3,
-		name: 'ames Henderson',
-		email: 'ames@gmail.com',
-		mobile: '2365345445',
-		leadId: '#21233',
-		status: 'Not Interested',
-	},
-	{
-		id: 4,
-		name: 'Priya Sharma',
-		email: 'priya.sharma@email.com',
-		mobile: '76535647645',
-		leadId: '#21234',
-		status: 'Voice Mial',
-	},
-	{
-		id: 5,
-		name: 'Emily Carter',
-		email: 'emily.carter@example.com',
-		mobile: '6754367657536',
-		leadId: '#21235',
-		status: 'Not Reachable',
-	},
-	{
-		id: 6,
-		name: 'Michael Nguyen',
-		email: 'michael.nguyen@mail.com',
-		mobile: '76575357377',
-		leadId: '#21236',
-		status: 'Duplicate lead',
-	},
-	{
-		id: 7,
-		name: 'ames Henderson',
-		email: 'ames@gmail.com',
-		mobile: '567373737',
-		leadId: '#21237',
-		status: 'Sale Done',
-	},
-	{
-		id: 8,
-		name: 'Sofia Martinez',
-		email: 'sofia@gmail.com',
-		mobile: '7889463455',
-		leadId: '#21238',
-		status: 'Payment Pending',
-	},
-	{
-		id: 9,
-		name: 'Sofia Martinez',
-		email: 'sofia@gmail.com',
-		mobile: '335464577866',
-		leadId: '#21239',
-		status: 'Invalid Lead',
-	},
-	{
-		id: 10,
-		name: 'Michael Nguyen',
-		email: 'michael.nguyen@mail.com',
-		mobile: '92787463782',
-		leadId: '#21240',
-		status: 'Status',
-	},
-];
-
 export default function LeadsPage() {
-	const { data: leads = [] } = useQuery({
-		queryKey: ['leads'],
-		queryFn: fetchLeads,
-	});
+	const { data: token } = useToken();
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [itemsPerPage, setItemsPerPage] = useState(10);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const [searchTerm, setSearchTerm] = useState('');
 
+	const { data, isLoading, error } = useQuery({
+		queryKey: ['/leads', currentPage, itemsPerPage, searchTerm],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/leads', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					query: {
+						search: searchTerm || undefined,
+						page: currentPage,
+						limit: itemsPerPage,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
+	});
+
+	const leads = useMemo(() => data?.data ?? [], [data]);
+	const totalItems = data?.total ?? 0;
+	const totalPages = Math.ceil(totalItems / itemsPerPage);
+
 	const queryClient = useQueryClient();
 
-	const filteredLeads = useMemo(() => {
-		const term = searchTerm.toLowerCase();
-		return leads.filter(
-			(lead) =>
-				lead.name.toLowerCase().includes(term) ||
-				lead.email.toLowerCase().includes(term) ||
-				lead.mobile.toLowerCase().includes(term) ||
-				lead.leadId.toLowerCase().includes(term),
-		);
-	}, [leads, searchTerm]);
-
 	const { mutate: updateStatus } = useMutation({
-		mutationFn: ({ leadId, status }: { leadId: number; status: Status }) => updateLeadStatus(leadId, status),
-		// When mutate is called:
+		mutationFn: async ({ leadId, status }: { leadId: string; status: Status }) => {
+			const { data, error } = await Api.PATCH(`/leads/{id}`, {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					path: { id: leadId },
+				},
+				body: { status },
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
 		onMutate: async ({ leadId, status }) => {
-			// Cancel any outgoing refetches
-			await queryClient.cancelQueries({ queryKey: ['leads'] });
+			await queryClient.cancelQueries({ queryKey: ['/leads'] });
 
-			// Snapshot the previous value
-			const previousLeads = queryClient.getQueryData<Lead[]>(['leads']);
+			const previousLeads = queryClient.getQueryData<LeadDto[]>(['/leads']);
 
-			// Optimistically update to the new value
-			queryClient.setQueryData<Lead[]>(['leads'], (old) =>
+			queryClient.setQueryData<LeadDto[]>(['/leads'], (old) =>
 				old?.map((lead) => (lead.id === leadId ? { ...lead, status } : lead)),
 			);
 
-			// Return a context object with the snapshotted value
 			return { previousLeads };
 		},
-		// If the mutation fails, use the context returned from onMutate to roll back
 		onError: (_, __, context) => {
-			if (context?.previousLeads) queryClient.setQueryData<Lead[]>(['leads'], context.previousLeads);
+			if (context?.previousLeads) queryClient.setQueryData<LeadDto[]>(['/leads'], context.previousLeads);
 		},
-		// onSettled: () => {
-		// 	void queryClient.invalidateQueries({ queryKey: ['leads'] });
-		// },
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ['/leads'] });
+		},
 	});
 
-	const columns: ColumnDef<Lead>[] = useMemo(
+	const columns: ColumnDef<LeadDto>[] = useMemo(
 		() => [
 			{
 				accessorKey: 'id',
@@ -201,12 +126,12 @@ export default function LeadsPage() {
 				enableSorting: true,
 			},
 			{
-				accessorKey: 'mobile',
+				accessorKey: 'phone',
 				header: 'Mobile Number',
 				enableSorting: true,
 			},
 			{
-				accessorKey: 'leadId',
+				accessorKey: 'internalLeadId',
 				header: 'Lead ID',
 				enableSorting: true,
 			},
@@ -259,7 +184,7 @@ export default function LeadsPage() {
 	);
 
 	const table = useReactTable({
-		data: filteredLeads,
+		data: leads,
 		columns,
 		state: {
 			sorting,
@@ -272,8 +197,9 @@ export default function LeadsPage() {
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
-		pageCount: Math.ceil(filteredLeads.length / itemsPerPage),
+		pageCount: totalPages,
 	});
+
 	const handleSearch = () => {
 		setSearchTerm(searchInputRef.current?.value ?? '');
 		setCurrentPage(1);
@@ -303,7 +229,11 @@ export default function LeadsPage() {
 					Search
 				</Button>
 			</div>
-			{leads.length ? (
+			{isLoading ? (
+				<div className="flex items-center justify-center pt-20">
+					<div className="size-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
+				</div>
+			) : leads.length ? (
 				<div className="rounded-md border">
 					<div className="w-full">
 						<div className="rounded-md border">
@@ -352,7 +282,7 @@ export default function LeadsPage() {
 								setCurrentPage(1);
 							}}
 							onPageChange={setCurrentPage}
-							totalPages={table.getPageCount()}
+							totalPages={totalPages}
 						/>
 					</div>
 				</div>
@@ -452,7 +382,9 @@ export default function LeadsPage() {
 							fill="black"
 						/>
 					</svg>
-					<p className="text-2xl font-medium leading-8 tracking-[-0.6px] text-primary">No Leads at the Moment</p>
+					<p className="text-2xl font-medium leading-8 tracking-[-0.6px] text-primary">
+						{error ? error.message : 'No Leads at the Moment'}
+					</p>
 				</div>
 			)}
 		</div>

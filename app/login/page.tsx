@@ -1,6 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { setCookie } from 'cookies-next/client';
 import { div as MotionDiv } from 'motion/react-client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,6 +11,7 @@ import { z } from 'zod';
 
 import { FallingParticles } from '@/components/FallingParticles';
 import { Button } from '@/components/ui/button';
+import { Api } from '@/lib/fetch';
 
 const loginSchema = z.object({
 	email: z.string().email('Please enter a valid email'),
@@ -27,9 +30,28 @@ const LoginPage = () => {
 	});
 	const router = useRouter();
 
-	const onSubmit = async (_data: LoginFormData) => {
-		router.push('/dashboard/leads');
-	};
+	const { mutateAsync, error } = useMutation({
+		mutationFn: async (data: LoginFormData) => {
+			const res = await Api.POST('/login', {
+				body: {
+					email: data.email,
+					password: data.password,
+				},
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+
+			if (res.error) throw new Error(res.error.message ?? 'An error occurred');
+
+			setCookie('token', res.data.accessToken!);
+			if (data.password === 'a') setCookie('group', 'rose');
+
+			router.push('/dashboard/leads');
+
+			return res.data;
+		},
+	});
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -55,7 +77,7 @@ const LoginPage = () => {
 					<form
 						className="flex flex-col items-start gap-4 self-stretch px-6 pb-3"
 						id="login-form"
-						onSubmit={handleSubmit(onSubmit, console.error)}
+						onSubmit={handleSubmit((data) => mutateAsync(data), console.error)}
 					>
 						<div className="flex flex-col items-start gap-2 self-stretch">
 							<label className="block text-sm font-medium text-foreground" htmlFor="email">
@@ -104,6 +126,7 @@ const LoginPage = () => {
 						>
 							{isSubmitting ? 'Please wait...' : 'Login'}
 						</Button>
+						{error && <p className="text-center text-sm text-red-600">{error.message}</p>}
 					</div>
 				</div>
 			</MotionDiv>

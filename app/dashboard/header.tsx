@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useUser } from '@/hooks/use-user';
 
 export function MainHeader() {
 	const pathname = usePathname();
@@ -23,6 +24,8 @@ export function MainHeader() {
 
 	const paths = pathname.split('/').filter(Boolean);
 	const currentPage = paths[paths.length - 1];
+
+	const { data: user } = useUser();
 
 	return (
 		<div className="bg-white">
@@ -60,8 +63,8 @@ export function MainHeader() {
 						<Bell className="size-5" />
 					</Button>
 					<Avatar className="size-10">
-						<AvatarImage alt="RA" src="/rahul.jpg" />
-						<AvatarFallback>RA</AvatarFallback>
+						<AvatarImage alt={user?.name} src="/rahul.jpg" />
+						<AvatarFallback>{user?.name[0]}</AvatarFallback>
 					</Avatar>
 				</div>
 			</div>

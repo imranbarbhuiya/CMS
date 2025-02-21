@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={`${geist.className} rose antialiased`}>
+			<body className={`${geist.className} antialiased`}>
 				<Providers>
 					<Toaster />
 					{children}
