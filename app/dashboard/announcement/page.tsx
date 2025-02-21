@@ -7,9 +7,12 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { MultiSelect } from '@/components/multi-select';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
 interface User {
@@ -22,11 +25,60 @@ interface Team {
 	name: string;
 }
 
-const formSchema = z.object({
-	members: z.array(z.string()).min(1, 'Please select at least one member'),
-	teams: z.array(z.string()).min(1, 'Please select at least one team'),
-	message: z.string().min(1, 'Message is required'),
-});
+interface Announcement {
+	author: {
+		name: string;
+	};
+	date: string;
+	members: string[];
+	message: string;
+	teams: string[];
+}
+
+const formSchema = z
+	.object({
+		sendToEveryone: z.boolean().default(false),
+		members: z.array(z.string()),
+		teams: z.array(z.string()),
+		message: z.string().min(1, 'Message is required'),
+	})
+	.superRefine((data, ctx) => {
+		if (!data.sendToEveryone) {
+			if (data.members.length < 1) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Please select at least one member',
+					path: ['members'],
+				});
+			}
+			if (data.teams.length < 1) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Please select at least one team',
+					path: ['teams'],
+				});
+			}
+		}
+	});
+
+function AnnouncementToast({ announcement }: { readonly announcement: Announcement }) {
+	return (
+		<div className="flex items-start gap-4">
+			<Avatar className="size-8">
+				<AvatarFallback>{announcement.author.name.charAt(0)}</AvatarFallback>
+			</Avatar>
+			<div className="flex flex-col gap-1">
+				<div className="flex items-center gap-2">
+					<span className="font-medium">{announcement.author.name}</span>
+					<Badge className="text-[10px]" variant="secondary">
+						{announcement.date}
+					</Badge>
+				</div>
+				<p className="text-sm text-muted-foreground">{announcement.message}</p>
+			</div>
+		</div>
+	);
+}
 
 export default function AnnouncementPage() {
 	const { data: users = [] } = useQuery<User[]>({
@@ -50,24 +102,36 @@ export default function AnnouncementPage() {
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
+			sendToEveryone: false,
 			members: [],
 			teams: [],
 			message: '',
 		},
 	});
 
+	const sendToEveryone = form.watch('sendToEveryone');
+
 	const handleSubmit = (values: z.infer<typeof formSchema>) => {
-		toast.message(values.message, {
-			closeButton: true,
+		const announcement: Announcement = {
+			message: values.message,
+			author: {
+				name: 'Admin', // Replace with actual logged in user name
+			},
+			date: new Date().toLocaleDateString(),
+			teams: values.teams,
+			members: values.members,
+		};
+
+		const audio = new Audio('/notification.mp3');
+		// eslint-disable-next-line promise/prefer-await-to-then
+		audio.play().catch(console.error);
+
+		toast.success('Announcement sent successfully');
+
+		toast(<AnnouncementToast announcement={announcement} />, {
+			duration: 4_000,
 		});
-	};
-
-	const handleMembersChange = (values: string[]) => {
-		form.setValue('members', values);
-	};
-
-	const handleTeamsChange = (values: string[]) => {
-		form.setValue('teams', values);
+		form.reset();
 	};
 
 	return (
@@ -82,40 +146,61 @@ export default function AnnouncementPage() {
 						<form className="space-y-4 p-4" onSubmit={form.handleSubmit(handleSubmit, console.error)}>
 							<FormField
 								control={form.control}
-								name="members"
+								name="sendToEveryone"
 								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Member</FormLabel>
+									<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+										<div className="space-y-0.5">
+											<FormLabel className="text-base">Send to Everyone</FormLabel>
+											<div className="text-sm text-muted-foreground">
+												Send this announcement to all members and teams
+											</div>
+										</div>
 										<FormControl>
-											<MultiSelect
-												onChange={handleMembersChange}
-												options={members}
-												placeholder="Select Member"
-												selected={field.value}
-											/>
+											<Switch checked={field.value} onCheckedChange={field.onChange} />
 										</FormControl>
-										<FormMessage />
 									</FormItem>
 								)}
 							/>
-							<FormField
-								control={form.control}
-								name="teams"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Team</FormLabel>
-										<FormControl>
-											<MultiSelect
-												onChange={handleTeamsChange}
-												options={teamOptions}
-												placeholder="Select Team"
-												selected={field.value}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+							{!sendToEveryone && (
+								<>
+									<FormField
+										control={form.control}
+										name="members"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Member</FormLabel>
+												<FormControl>
+													<MultiSelect
+														onChange={field.onChange}
+														options={members}
+														placeholder="Select Member"
+														selected={field.value}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={form.control}
+										name="teams"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Team</FormLabel>
+												<FormControl>
+													<MultiSelect
+														onChange={field.onChange}
+														options={teamOptions}
+														placeholder="Select Team"
+														selected={field.value}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</>
+							)}
 							<FormField
 								control={form.control}
 								name="message"

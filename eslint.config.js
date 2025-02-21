@@ -40,6 +40,6 @@ export default [
 		},
 	},
 	{
-		ignores: ['.next/'],
+		ignores: ['.next/', 'openapi'],
 	},
 ];

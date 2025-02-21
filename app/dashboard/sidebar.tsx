@@ -13,6 +13,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+// import { FallingParticles } from '@/components/FallingParticles';
 import {
 	Sidebar,
 	SidebarContent,
@@ -50,6 +51,7 @@ export function MainSidebar() {
 					</div>
 				) : (
 					<div className="flex items-center gap-2 self-stretch rounded-[8px] p-2">
+						{/* <FallingParticles count={100} /> */}
 						<div className="rounded-lg bg-sidebar-primary p-2">
 							<GalleryVerticalEnd className="size-4 text-sidebar-primary-foreground" />
 						</div>

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 
-import { Pagination } from '@/components/pagination';
 import { TicketCard } from '@/app/dashboard/tickets/ticket-card';
+import { Pagination } from '@/components/pagination';
 
 export type TicketStatus = 'completed' | 'pending' | 'follow-up';
 
