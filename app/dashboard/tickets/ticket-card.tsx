@@ -4,37 +4,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-type TicketStatus = 'Completed' | 'Pending' | 'Follow-Up';
+import type { components } from '@/openapi/api';
 
-interface TicketCardProps {
-	readonly additionalNote?: string;
-	readonly billingAddress: string;
-	readonly email: string;
+export type TicketWithLeadDto = components['schemas']['TicketWithLeadDto'];
+
+interface TicketCardProps extends TicketWithLeadDto {
 	readonly minimal?: boolean;
-	readonly name: string;
-	readonly onStatusChange?: (status: TicketStatus) => void;
-	readonly paymentMode: string;
-	readonly phone: string;
-	readonly status: TicketStatus;
-	readonly subscriptionDetails: string;
-	readonly ticketId: string;
+	readonly onStatusChange?: (status: TicketWithLeadDto['status']) => void;
 }
 
-export const TicketCard = ({
-	ticketId,
-	name,
-	email,
-	phone,
-	subscriptionDetails,
-	billingAddress,
-	paymentMode,
-	additionalNote,
-	status,
-	minimal,
-	onStatusChange,
-}: TicketCardProps) => {
+export const TicketCard = ({ id, additionalInfo, leadDetails, status, minimal, onStatusChange }: TicketCardProps) => {
 	const handleStatusChange = (value: string) => {
-		onStatusChange?.(value as TicketStatus);
+		onStatusChange?.(value as TicketWithLeadDto['status']);
 	};
 
 	return (
@@ -42,11 +23,11 @@ export const TicketCard = ({
 			<CardHeader className="space-y-1.5">
 				<div className="flex items-start justify-between">
 					<div className="space-y-1">
-						<h2 className="text-2xl font-semibold">{name}</h2>
-						<p className="text-sm text-muted-foreground">{email}</p>
-						<p className="text-sm text-muted-foreground">{phone}</p>
+						<h2 className="text-2xl font-semibold">{leadDetails.name}</h2>
+						<p className="text-sm text-muted-foreground">{leadDetails.email}</p>
+						<p className="text-sm text-muted-foreground">{leadDetails.phone}</p>
 					</div>
-					<div className="text-sm text-muted-foreground">Ticket ID: {ticketId}</div>
+					<div className="text-sm text-muted-foreground">Ticket ID: {id}</div>
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-4">
@@ -54,20 +35,20 @@ export const TicketCard = ({
 					<>
 						<div className="space-y-2">
 							<Label>Subscription Details</Label>
-							<Input className="bg-background" defaultValue={subscriptionDetails} readOnly />
+							<Input className="bg-background" defaultValue={leadDetails.subscription} readOnly />
 						</div>
 						<div className="space-y-2">
 							<Label>Billing Address</Label>
-							<Input className="bg-background" defaultValue={billingAddress} readOnly />
+							<Input className="bg-background" defaultValue={leadDetails.billingAddress} readOnly />
 						</div>
 						<div className="space-y-2">
 							<Label>Payment Mode</Label>
-							<Input className="bg-background" defaultValue={paymentMode} readOnly />
+							<Input className="bg-background" defaultValue={leadDetails.paymentMethod} readOnly />
 						</div>
-						{additionalNote && (
+						{additionalInfo && (
 							<div className="space-y-2">
 								<Label>Additional Note</Label>
-								<Textarea className="min-h-[100px] resize-none bg-background" defaultValue={additionalNote} readOnly />
+								<Textarea className="min-h-[100px] resize-none bg-background" defaultValue={additionalInfo} readOnly />
 							</div>
 						)}
 					</>

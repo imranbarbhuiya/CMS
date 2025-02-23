@@ -19,7 +19,7 @@ export default function AuditLogsPage() {
 
 	const { data, isLoading } = useQuery({
 		queryKey: ['/audit-logs', currentPage, itemsPerPage, searchTerm],
-		queryFn: async () => {
+		queryFn: async ({ signal }) => {
 			const { data, error } = await Api.GET('/audit-log', {
 				params: {
 					header: {
@@ -31,6 +31,7 @@ export default function AuditLogsPage() {
 						limit: itemsPerPage,
 					},
 				},
+				signal,
 			});
 
 			if (error) throw new Error(error.message ?? 'An error occurred');
@@ -42,7 +43,7 @@ export default function AuditLogsPage() {
 	});
 
 	const logs = data?.data ?? [];
-	const totalItems = data?.count ?? 0;
+	const totalItems = data?.total ?? 0;
 	const totalPages = Math.ceil(totalItems / itemsPerPage);
 
 	const handleExport = () => {

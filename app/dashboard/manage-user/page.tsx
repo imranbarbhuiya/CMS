@@ -40,6 +40,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToken } from '@/hooks/use-token';
+import { useUser } from '@/hooks/use-user';
 import { Api } from '@/lib/fetch';
 
 import type { UserDto } from './manage-user-dialog';
@@ -48,13 +49,14 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 const userSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
 	email: z.string().email('Invalid email address'),
-	password: z.string().min(1, 'Password is required'),
+	password: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
 
 export default function ManageUserPage() {
 	const { data: token } = useToken();
+	const { data: currentUser } = useUser();
 	const queryClient = useQueryClient();
 	const [open, setOpen] = useState(false);
 	const [isEdit, setIsEdit] = useState(false);
@@ -110,17 +112,34 @@ export default function ManageUserPage() {
 			try {
 				await queryClient.cancelQueries({ queryKey: ['/all'] });
 
-				const previousUsers = queryClient.getQueryData<UserDto[]>(['/all']) ?? [];
+				const previousUsers = queryClient.getQueryData<{ data: UserDto[]; total: number }>(['/all']) ?? [];
 
-				queryClient.setQueryData<UserDto[]>(['/all'], (old) => [
-					...(old ?? []),
+				queryClient.setQueryData<{ data: UserDto[]; total: number }>(['/all'], (old) =>
+					// ...(old ?? []),
+					// {
+					// 	...newUser,
+					// 	id: Math.floor(Math.random() * 1_000).toString(),
+					// 	createdAt: new Date().toISOString(),
+					// 	updatedAt: new Date().toISOString(),
+					// },
 					{
-						...newUser,
-						id: Math.floor(Math.random() * 1_000).toString(),
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
+						if (!old) return old;
+
+						return {
+							...old,
+							data: [
+								...old.data,
+								{
+									...newUser,
+									id: Math.floor(Math.random() * 1_000).toString(),
+									createdAt: new Date().toISOString(),
+									updatedAt: new Date().toISOString(),
+								},
+							],
+							total: old.total + 1,
+						};
 					},
-				]);
+				);
 
 				return { previousUsers };
 			} catch (error) {
@@ -140,7 +159,7 @@ export default function ManageUserPage() {
 	});
 
 	const { mutate: updateUser } = useMutation({
-		mutationFn: async (updatedUser: UserDto) => {
+		mutationFn: async (updatedUser: Partial<UserDto> & Pick<UserDto, 'id'>) => {
 			const { data, error } = await Api.PATCH(`/{id}/update`, {
 				params: {
 					header: {
@@ -153,7 +172,8 @@ export default function ManageUserPage() {
 				body: {
 					name: updatedUser.name,
 					email: updatedUser.email,
-					password: updatedUser.password || undefined,
+					password: updatedUser.password,
+					role: updatedUser.role,
 				},
 			});
 
@@ -163,11 +183,16 @@ export default function ManageUserPage() {
 		onMutate: async (updatedUser) => {
 			try {
 				await queryClient.cancelQueries({ queryKey: ['/all'] });
-				const previousUsers = queryClient.getQueryData<UserDto[]>(['/all']) ?? [];
+				const previousUsers = queryClient.getQueryData<{ data: UserDto[]; total: number }>(['/all']) ?? [];
 
-				queryClient.setQueryData<UserDto[]>(['/all'], (old = []) =>
-					old.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
-				);
+				queryClient.setQueryData<{ data: UserDto[]; total: number }>(['/all'], (old) => {
+					if (!old) return old;
+
+					return {
+						...old,
+						data: old.data.map((user) => (user.id === updatedUser.id ? { ...user, ...updatedUser } : user)),
+					};
+				});
 
 				return { previousUsers };
 			} catch (error) {
@@ -205,9 +230,17 @@ export default function ManageUserPage() {
 		onMutate: async (userId) => {
 			try {
 				await queryClient.cancelQueries({ queryKey: ['/all'] });
-				const previousUsers = queryClient.getQueryData<UserDto[]>(['/all']) ?? [];
+				const previousUsers = queryClient.getQueryData<{ data: UserDto[]; total: number }>(['/all']) ?? [];
 
-				queryClient.setQueryData<UserDto[]>(['/all'], (old = []) => old.filter((user) => user.id !== userId));
+				queryClient.setQueryData<{ data: UserDto[]; total: number }>(['/all'], (old) => {
+					if (!old) return old;
+
+					return {
+						...old,
+						data: old.data.filter((user) => user.id !== userId),
+						total: old.total - 1,
+					};
+				});
 
 				return { previousUsers };
 			} catch (error) {
@@ -247,8 +280,11 @@ export default function ManageUserPage() {
 	}, [manageUserForm]);
 
 	const handleCopyPassword = useCallback(() => {
-		void navigator.clipboard.writeText(manageUserForm.getValues('password'));
-		toast('Password copied to clipboard');
+		const password = manageUserForm.getValues('password');
+		if (password) {
+			void navigator.clipboard.writeText(password);
+			toast('Password copied to clipboard');
+		}
 	}, [manageUserForm]);
 
 	const onSubmit = (data: UserFormValues) => {
@@ -256,12 +292,20 @@ export default function ManageUserPage() {
 			const updatedUser = {
 				...user,
 				...data,
+				// Only include password if it was provided
+				...(data.password ? { password: data.password } : {}),
 			};
 			updateUser(updatedUser);
 		} else {
+			if (!data.password) {
+				toast.error('Password is required for new users');
+				return;
+			}
+
 			const newUser = {
-				...data,
-				id: Math.floor(Math.random() * 1_000),
+				name: data.name,
+				email: data.email,
+				password: data.password,
 				teamName: 'Not Assigned',
 				teamRole: 'Not Assigned',
 			};
@@ -269,6 +313,13 @@ export default function ManageUserPage() {
 		}
 		setOpen(false);
 		manageUserForm.reset();
+	};
+
+	const handleAppointManager = async (userId: string) => {
+		updateUser({
+			id: userId,
+			role: 'Manager',
+		});
 	};
 
 	const columns: ColumnDef<
@@ -308,7 +359,7 @@ export default function ManageUserPage() {
 			enableSorting: true,
 		},
 		{
-			accessorKey: 'teamName',
+			accessorKey: 'team',
 			header: 'Team Name',
 			enableSorting: true,
 		},
@@ -345,12 +396,14 @@ export default function ManageUserPage() {
 								Edit
 							</span>
 						</DropdownMenuItem>
-						<DropdownMenuItem>
-							<span className="flex items-center gap-2">
-								<ArrowBigUpDash className="size-4" />
-								Appoint Manager
-							</span>
-						</DropdownMenuItem>
+						{currentUser?.role === 'SuperAdmin' && row.original.role !== 'Manager' && (
+							<DropdownMenuItem onClick={() => handleAppointManager(row.original.id)}>
+								<span className="flex items-center gap-2">
+									<ArrowBigUpDash className="size-4" />
+									Appoint Manager
+								</span>
+							</DropdownMenuItem>
+						)}
 						<DropdownMenuItem className="text-destructive" onClick={() => handleDeleteUser(row.original)}>
 							<span className="flex items-center gap-2">
 								<Trash2 className="size-4" />
@@ -408,6 +461,14 @@ export default function ManageUserPage() {
 		}
 	}, [open, manageUserForm]);
 
+	// useEffect(() => {
+	// 	manageUserForm.reset({
+	// 		name: user?.name ?? '',
+	// 		email: user?.email ?? '',
+	// 		password: '',
+	// 	});
+	// }, [user, manageUserForm]);
+
 	const table = useReactTable({
 		data: filteredUsers,
 		columns,
@@ -425,7 +486,7 @@ export default function ManageUserPage() {
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
-		pageCount: Math.ceil((users?.count ?? 0) / itemsPerPage),
+		pageCount: Math.ceil((users?.total ?? 0) / itemsPerPage),
 	});
 
 	return (
@@ -554,11 +615,15 @@ export default function ManageUserPage() {
 								name="password"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Password</FormLabel>
+										<FormLabel>{isEdit ? 'Password (Optional)' : 'Password'}</FormLabel>
 										<div className="space-y-2">
 											<div className="flex gap-2">
 												<FormControl>
-													<Input placeholder="Generated password" type="text" {...field} />
+													<Input
+														placeholder={isEdit ? 'Leave blank to keep current password' : 'Generated password'}
+														type="text"
+														{...field}
+													/>
 												</FormControl>
 												<Button
 													disabled={!field.value}

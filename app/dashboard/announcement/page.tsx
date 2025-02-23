@@ -18,26 +18,23 @@ import { Api } from '@/lib/fetch';
 const formSchema = z
 	.object({
 		sendToEveryone: z.boolean().default(false),
-		members: z.array(z.string()),
-		teams: z.array(z.string()),
+		users: z.array(z.string()).optional(),
+		teams: z.array(z.string()).optional(),
 		message: z.string().min(1, 'Message is required'),
 	})
 	.superRefine((data, ctx) => {
-		if (!data.sendToEveryone) {
-			if (data.members.length < 1) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: 'Please select at least one member',
-					path: ['members'],
-				});
-			}
-			if (data.teams.length < 1) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: 'Please select at least one team',
-					path: ['teams'],
-				});
-			}
+		if (!data.sendToEveryone && !data.users?.length && !data.teams?.length) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Please select at least one member',
+				path: ['users'],
+			});
+
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Please select at least one team',
+				path: ['teams'],
+			});
 		}
 	});
 
@@ -46,13 +43,14 @@ export default function AnnouncementPage() {
 
 	const { data: users } = useQuery({
 		queryKey: ['/all'],
-		queryFn: async () => {
+		queryFn: async ({ signal }) => {
 			const { data, error } = await Api.GET('/all', {
 				params: {
 					header: {
 						Authorization: `Bearer ${token}`,
 					},
 				},
+				signal,
 			});
 
 			if (error) throw new Error(error.message ?? 'An error occurred');
@@ -61,19 +59,20 @@ export default function AnnouncementPage() {
 		enabled: Boolean(token),
 	});
 
-	const { data: teams = [] } = useQuery({
+	const { data: teams } = useQuery({
 		queryKey: ['/teams'],
-		queryFn: async () => {
+		queryFn: async ({ signal }) => {
 			const { data, error } = await Api.GET('/teams', {
 				params: {
 					header: {
 						Authorization: `Bearer ${token}`,
 					},
 				},
+				signal,
 			});
 
 			if (error) throw new Error(error.message ?? 'An error occurred');
-			return data as unknown as { id: string; name: string }[];
+			return data;
 		},
 		enabled: Boolean(token),
 	});
@@ -84,16 +83,17 @@ export default function AnnouncementPage() {
 			label: user.name,
 		})) ?? [];
 
-	const teamOptions = teams.map((team) => ({
-		value: team.id,
-		label: team.name,
-	}));
+	const teamOptions =
+		teams?.data.map((team) => ({
+			value: team.id,
+			label: team.name,
+		})) ?? [];
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			sendToEveryone: false,
-			members: [],
+			users: [],
 			teams: [],
 			message: '',
 		},
@@ -109,7 +109,21 @@ export default function AnnouncementPage() {
 						Authorization: `Bearer ${token}`,
 					},
 				},
-				body: {},
+				body: {
+					message: values.message,
+					...(values.sendToEveryone
+						? {
+								everyone: true,
+							}
+						: {
+								users: values.users,
+								teams: values.teams?.map((team) => ({
+									id: team,
+									roles: 'all' as const,
+									companyId: 'Blue Company' as const,
+								})),
+							}),
+				},
 			});
 
 			if (error) throw new Error(error.message ?? 'An error occurred');
@@ -159,7 +173,7 @@ export default function AnnouncementPage() {
 								<>
 									<FormField
 										control={form.control}
-										name="members"
+										name="users"
 										render={({ field }) => (
 											<FormItem>
 												<FormLabel>Member</FormLabel>
@@ -168,7 +182,7 @@ export default function AnnouncementPage() {
 														onChange={field.onChange}
 														options={members}
 														placeholder="Select Member"
-														selected={field.value}
+														selected={field.value ?? []}
 													/>
 												</FormControl>
 												<FormMessage />
@@ -186,7 +200,7 @@ export default function AnnouncementPage() {
 														onChange={field.onChange}
 														options={teamOptions}
 														placeholder="Select Team"
-														selected={field.value}
+														selected={field.value ?? []}
 													/>
 												</FormControl>
 												<FormMessage />
@@ -214,7 +228,7 @@ export default function AnnouncementPage() {
 							/>
 							<div className="-mx-4 border-t border-solid border-border p-4">
 								<Button className="w-full bg-themecolor-500 hover:bg-themecolor-600" type="submit">
-									Send Notification
+									{mutation.isPending ? 'Sending...' : 'Send Notification'}
 								</Button>
 							</div>
 						</form>

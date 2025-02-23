@@ -75,7 +75,7 @@ export function UserDialog({ mode, user, onUserMutated, isOpen, onClose, trigger
 	const onSubmit = async (data: UserFormValues) => {
 		try {
 			if (isEdit && user) {
-				const { error } = await Api.POST(`/{id}/update`, {
+				const { error } = await Api.PATCH(`/{id}/update`, {
 					params: {
 						header: {
 							Authorization: `Bearer ${token}`,

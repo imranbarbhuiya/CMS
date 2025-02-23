@@ -127,6 +127,23 @@ export interface paths {
 		patch: operations['TeamController_update'];
 		trace?: never;
 	};
+	'/teams/me': {
+		parameters: {
+			query?: never;
+			header?: never;
+			path?: never;
+			cookie?: never;
+		};
+		/** Get my team */
+		get: operations['TeamController_getMyTeam'];
+		put?: never;
+		post?: never;
+		delete?: never;
+		options?: never;
+		head?: never;
+		patch?: never;
+		trace?: never;
+	};
 	'/teams/{id}/delete': {
 		parameters: {
 			query?: never;
@@ -395,12 +412,12 @@ export interface components {
 				message: string;
 				userId: string;
 				/**
-				 * @example 'user create' | 'user update' | 'user deleted' | 'user login' | 'user logout' | 'lead created' | 'lead updated' | 'lead deleted' | 'lead assigned' | 'lead unassigned' | 'lead status changed' | 'ticket created' | 'ticket updated' | 'ticket deleted' | 'ticket assigned' | 'ticket unassigned' | 'ticket status changed' | 'team created' | 'team updated' | 'team deleted' | 'team member added' | 'team member removed'
+				 * @example 'user created' | 'user updated' | 'user deleted' | 'user login' | 'user logout' | 'lead created' | 'lead updated' | 'lead deleted' | 'lead assigned' | 'lead unassigned' | 'lead status changed' | 'ticket created' | 'ticket updated' | 'ticket deleted' | 'ticket assigned' | 'ticket unassigned' | 'ticket status changed' | 'team created' | 'team deleted' | 'team member added' | 'team member removed'
 				 * @enum {string}
 				 */
 				action:
-					| 'user create'
-					| 'user update'
+					| 'user created'
+					| 'user updated'
 					| 'user deleted'
 					| 'user login'
 					| 'user logout'
@@ -417,7 +434,6 @@ export interface components {
 					| 'ticket unassigned'
 					| 'ticket status changed'
 					| 'team created'
-					| 'team updated'
 					| 'team deleted'
 					| 'team member added'
 					| 'team member removed';
@@ -425,7 +441,7 @@ export interface components {
 				createdAt: string;
 				updatedAt: string;
 			}[];
-			count: number;
+			total: number;
 		};
 		ResponseDto: {
 			message?: string;
@@ -515,7 +531,7 @@ export interface components {
 				createdAt: string;
 				updatedAt: string;
 			}[];
-			count: number;
+			total: number;
 		};
 		UpdateLeadDto: {
 			/**
@@ -566,6 +582,13 @@ export interface components {
 				id: string;
 				name: string;
 				description?: string | null;
+				/**
+				 * @example 'Blue Company' | 'Red Company'
+				 * @enum {string}
+				 */
+				companyId: 'Blue Company' | 'Red Company';
+				createdAt: string;
+				updatedAt: string;
 				users: {
 					/**
 					 * @example 'Team Lead' | 'Sales Executive' | 'Service Executive'
@@ -574,16 +597,10 @@ export interface components {
 					role: 'Team Lead' | 'Sales Executive' | 'Service Executive';
 					/** @description Refers to User */
 					userId: string;
+					userName: string;
 				}[];
-				/**
-				 * @example 'Blue Company' | 'Red Company'
-				 * @enum {string}
-				 */
-				companyId: 'Blue Company' | 'Red Company';
-				createdAt: string;
-				updatedAt: string;
 			}[];
-			count: number;
+			total: number;
 		};
 		UpdateTeamDto: {
 			users: {
@@ -617,7 +634,7 @@ export interface components {
 			/** @description Refers to User */
 			assignedTo?: string | null;
 			/** @description Refers to User */
-			raisedBy: string;
+			raisedBy?: string | null;
 			createdAt: string;
 			updatedAt: string;
 		};
@@ -634,11 +651,93 @@ export interface components {
 				/** @description Refers to User */
 				assignedTo?: string | null;
 				/** @description Refers to User */
-				raisedBy: string;
+				raisedBy?: string | null;
 				createdAt: string;
 				updatedAt: string;
+				leadDetails: {
+					id: string;
+					internalLeadId: string;
+					name: string;
+					email: string;
+					phone: string;
+					subscription: string;
+					billingAddress: string;
+					paymentMethod: string;
+					/**
+					 * @example 'Blue Company' | 'Red Company'
+					 * @enum {string}
+					 */
+					leadSource: 'Blue Company' | 'Red Company';
+					/**
+					 * @example 'New' | 'Customer Not Interested' | 'Voice Mail' | 'Not Reachable' | 'Duplicate Lead' | 'Sale Done' | 'Payment Pending'
+					 * @enum {string}
+					 */
+					status:
+						| 'New'
+						| 'Customer Not Interested'
+						| 'Voice Mail'
+						| 'Not Reachable'
+						| 'Duplicate Lead'
+						| 'Sale Done'
+						| 'Payment Pending';
+					/** @description Refers to User */
+					assignedTo?: string | null;
+					/** @description Refers to Ticket */
+					ticketId?: string | null;
+					createdAt: string;
+					updatedAt: string;
+				};
 			}[];
-			count: number;
+			total: number;
+		};
+		TicketWithLeadDto: {
+			id: string;
+			leadId: string;
+			additionalInfo: string;
+			/**
+			 * @example 'Completed' | 'Pending' | 'Follow-Up'
+			 * @enum {string}
+			 */
+			status: 'Completed' | 'Pending' | 'Follow-Up';
+			/** @description Refers to User */
+			assignedTo?: string | null;
+			/** @description Refers to User */
+			raisedBy?: string | null;
+			createdAt: string;
+			updatedAt: string;
+			leadDetails: {
+				id: string;
+				internalLeadId: string;
+				name: string;
+				email: string;
+				phone: string;
+				subscription: string;
+				billingAddress: string;
+				paymentMethod: string;
+				/**
+				 * @example 'Blue Company' | 'Red Company'
+				 * @enum {string}
+				 */
+				leadSource: 'Blue Company' | 'Red Company';
+				/**
+				 * @example 'New' | 'Customer Not Interested' | 'Voice Mail' | 'Not Reachable' | 'Duplicate Lead' | 'Sale Done' | 'Payment Pending'
+				 * @enum {string}
+				 */
+				status:
+					| 'New'
+					| 'Customer Not Interested'
+					| 'Voice Mail'
+					| 'Not Reachable'
+					| 'Duplicate Lead'
+					| 'Sale Done'
+					| 'Payment Pending';
+				/** @description Refers to User */
+				assignedTo?: string | null;
+				/** @description Refers to Ticket */
+				ticketId?: string | null;
+				createdAt: string;
+				updatedAt: string;
+			};
 		};
 		UpdateTicketDto: {
 			/**
@@ -684,11 +783,10 @@ export interface components {
 				role?: 'SuperAdmin' | 'Manager' | 'User';
 				/** @description Refers to Team */
 				team?: string | null;
-				accessToken?: string | null;
 				createdAt: string;
 				updatedAt: string;
 			}[];
-			count: number;
+			total: number;
 		};
 		UpdateUserDto: {
 			email?: string;
@@ -699,6 +797,30 @@ export interface components {
 			 * @enum {string}
 			 */
 			role?: 'SuperAdmin' | 'Manager' | 'User';
+		};
+		CreateAnnouncementDto: {
+			message: string;
+			everyone?: boolean;
+			users?: string[];
+			teams?: {
+				/** @description Team ID or "all" */
+				id: string | 'all';
+				roles?: string[] | 'all';
+				/**
+				 * @example 'Blue Company' | 'Red Company'
+				 * @enum {string}
+				 */
+				companyId: 'Blue Company' | 'Red Company';
+			}[];
+		};
+		AnnouncementDto: {
+			id: string;
+			content: string;
+			/** @description Refers to User */
+			from: string;
+			/** @description Refers to User */
+			to: string[];
+			createdAt: string;
 		};
 		AnnouncementsDto: {
 			id: string;
@@ -868,10 +990,13 @@ export interface operations {
 	LeadController_create: {
 		parameters: {
 			query: {
-				key: string;
+				key?: string;
 				Company: 'Blue Company' | 'Red Company';
 			};
-			header?: never;
+			header: {
+				/** @description Bearer <Token> */
+				Authorization: string;
+			};
 			path?: never;
 			cookie?: never;
 		};
@@ -1515,6 +1640,74 @@ export interface operations {
 			};
 		};
 	};
+	TeamController_getMyTeam: {
+		parameters: {
+			query?: never;
+			header: {
+				/** @description Bearer <Token> */
+				Authorization: string;
+			};
+			path?: never;
+			cookie?: never;
+		};
+		requestBody?: never;
+		responses: {
+			/** @description Returns success if request is successful */
+			200: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['TeamDto'];
+				};
+			};
+			/** @description Returns error if validation fails */
+			400: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ResponseDto'];
+				};
+			};
+			/** @description Unauthorized */
+			401: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ResponseDto'];
+				};
+			};
+			/** @description Forbidden */
+			403: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ResponseDto'];
+				};
+			};
+			/** @description Not Found */
+			404: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ResponseDto'];
+				};
+			};
+			/** @description Internal Server Error */
+			500: {
+				headers: {
+					[name: string]: unknown;
+				};
+				content: {
+					'application/json': components['schemas']['ResponseDto'];
+				};
+			};
+		};
+	};
 	TeamController_delete: {
 		parameters: {
 			query?: never;
@@ -1895,7 +2088,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['TicketDto'];
+					'application/json': components['schemas']['TicketWithLeadDto'];
 				};
 			};
 			/** @description Returns error if validation fails */
@@ -2661,7 +2854,11 @@ export interface operations {
 			path?: never;
 			cookie?: never;
 		};
-		requestBody?: never;
+		requestBody: {
+			content: {
+				'application/json': components['schemas']['CreateAnnouncementDto'];
+			};
+		};
 		responses: {
 			/** @description Returns success if request is successful */
 			200: {
@@ -2669,7 +2866,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['ResponseDto'];
+					'application/json': components['schemas']['AnnouncementDto'];
 				};
 			};
 			/** @description Returns error if validation fails */

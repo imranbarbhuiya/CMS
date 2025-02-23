@@ -2,7 +2,10 @@
 
 import { io } from 'socket.io-client';
 
-export const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:3001', {
+import type { TicketWithLeadDto } from '@/app/dashboard/tickets/ticket-card';
+import type { LeadDto } from '@/app/dashboard/tickets/ticket-dialog';
+
+export const socket = io(process.env.NEXT_PUBLIC_API_BASE, {
 	autoConnect: false,
 	reconnection: true,
 });
@@ -26,25 +29,21 @@ export interface AnnouncementPayload {
 }
 
 export interface LeadPayload {
-	email: string;
-	id: string;
-	name: string;
-	phone?: string;
-	status: string;
+	leadData: LeadDto;
+	message: string;
+	title: 'New Lead';
 }
 
 export interface TicketPayload {
-	assignee?: string;
-	id: string;
-	priority: string;
-	status: string;
-	title: string;
+	message: string;
+	ticketData: TicketWithLeadDto;
+	title: 'New Ticket';
 }
 
 export const socketEvents = {
 	Announcement: 'announcement',
-	Lead: 'lead',
-	Ticket: 'ticket',
+	Lead: 'newLead',
+	Ticket: 'newTicket',
 } as const;
 
 export type SocketEvents = typeof socketEvents;

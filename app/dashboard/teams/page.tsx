@@ -25,48 +25,53 @@ import { Api } from '@/lib/fetch';
 import type { components } from '@/openapi/api';
 
 interface TeamMember {
-	id: string;
-	name: string;
-	role: 'Team lead' | 'Sales' | 'Service' | 'Not Assigned';
+	role: 'Team Lead' | 'Sales Executive' | 'Service Executive';
+	userId: string;
+	userName: string;
 }
 
 interface Team extends Omit<components['schemas']['CreateTeamDto'], 'companyId'> {
 	id: string;
-	members: TeamMember[];
+	users: TeamMember[];
 }
 
-const roleOptions = ['Team lead', 'Sales', 'Service', 'Not Assigned'] as const;
+const roleOptions = ['Team Lead', 'Sales Executive', 'Service Executive'] as const;
 
-const addMembersFormSchema = z.object({
-	members: z.array(
+const addUsersFormSchema = z.object({
+	users: z.array(
 		z.object({
-			id: z.string(),
-			name: z.string(),
-			role: z.enum(['Team lead', 'Sales', 'Service', 'Not Assigned']),
+			userId: z.string(),
+			userName: z.string(),
+			role: z.enum(['Team Lead', 'Sales Executive', 'Service Executive'], {
+				message: 'Please select a valid role',
+			}),
 		}),
+		{
+			message: 'Please select a valid role',
+		},
 	),
 });
 
-type AddMembersFormValues = z.infer<typeof addMembersFormSchema>;
+type AddUsersFormValues = z.infer<typeof addUsersFormSchema>;
 
-interface AddMembersDialogProps {
-	readonly existingMembers: TeamMember[];
+interface AddUsersDialogProps {
+	readonly existingUsers: TeamMember[];
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly onSubmit: (values: { members: { id: string; name: string; role: TeamMember['role'] }[] }) => void;
+	readonly onSubmit: (values: AddUsersFormValues) => void;
 }
 
-const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMembersDialogProps) => {
-	const form = useForm<AddMembersFormValues>({
-		resolver: zodResolver(addMembersFormSchema),
+const AddUsersDialog = ({ isOpen, onClose, onSubmit, existingUsers }: AddUsersDialogProps) => {
+	const form = useForm<AddUsersFormValues>({
+		resolver: zodResolver(addUsersFormSchema),
 		defaultValues: {
-			members: [],
+			users: [],
 		},
 	});
 
 	const { data: token } = useToken();
 
-	const { data: users = [] } = useQuery({
+	const { data: users } = useQuery({
 		queryKey: ['/all'],
 		queryFn: async () => {
 			const { data, error } = await Api.GET('/all', {
@@ -85,50 +90,50 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 
 	const availableMemberOptions = useMemo(
 		() =>
-			users.map((user) => ({
+			users?.data.map((user) => ({
 				value: user.id.toString(),
 				label: user.name,
-			})),
+			})) ?? [],
 		[users],
 	);
 
 	useEffect(() => {
-		if (isOpen) form.reset({ members: existingMembers });
-	}, [isOpen, existingMembers, form]);
+		if (isOpen) form.reset({ users: existingUsers });
+	}, [isOpen, existingUsers, form]);
 
 	const handleMemberSelect = (selectedValues: string[]) => {
-		const members = selectedValues.map((memberId) => {
-			const existingMember = existingMembers.find((em) => em.id === memberId);
+		const users = selectedValues.map((memberId) => {
+			const existingMember = existingUsers.find((em) => em.userId === memberId);
 			if (existingMember) return existingMember;
 
 			const member = availableMemberOptions.find((availableMember) => availableMember.value === memberId);
 			return {
-				id: memberId,
-				name: member?.label ?? '',
-				role: 'Not Assigned' as const,
+				userId: memberId,
+				userName: member?.label ?? '',
+				role: 'Not Assigned' as any,
 			};
 		});
-		form.setValue('members', members);
+		form.setValue('users', users);
 	};
 
 	const handleRoleChange = (memberId: string, newRole: TeamMember['role']) => {
-		const currentMembers = form.getValues('members');
-		const updatedMembers = currentMembers.map((member) =>
-			member.id === memberId ? { ...member, role: newRole } : member,
+		const currentUsers = form.getValues('users');
+		const updatedUsers = currentUsers.map((member) =>
+			member.userId === memberId ? { ...member, role: newRole } : member,
 		);
-		form.setValue('members', updatedMembers);
+		form.setValue('users', updatedUsers);
 	};
 
-	const handleSubmit = (values: AddMembersFormValues) => {
+	const handleSubmit = (values: AddUsersFormValues) => {
 		onSubmit(values);
 		form.reset();
 		onClose();
 	};
 
-	const handleRemoveMember = (memberId: string) => {
-		const currentMembers = form.getValues('members');
-		const updatedMembers = currentMembers.filter((member) => member.id !== memberId);
-		form.setValue('members', updatedMembers);
+	const handleRemoveUser = (memberId: string) => {
+		const currentUsers = form.getValues('users');
+		const updatedUsers = currentUsers.filter((member) => member.userId !== memberId);
+		form.setValue('users', updatedUsers);
 	};
 
 	const handleClose = () => {
@@ -140,22 +145,22 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 		<Dialog onOpenChange={handleClose} open={isOpen}>
 			<DialogContent className="w-[600px]">
 				<DialogHeader>
-					<DialogTitle className="text-center text-2xl font-semibold text-themecolor-600">Add Members</DialogTitle>
+					<DialogTitle className="text-center text-2xl font-semibold text-themecolor-600">Add Users</DialogTitle>
 				</DialogHeader>
 				<Form {...form}>
 					<form className="space-y-4 pb-4" onSubmit={form.handleSubmit(handleSubmit)}>
 						<FormField
 							control={form.control}
-							name="members"
+							name="users"
 							render={() => (
 								<FormItem>
-									<FormLabel>Select Members</FormLabel>
+									<FormLabel>Select Users</FormLabel>
 									<FormControl>
 										<MultiSelect
 											onChange={handleMemberSelect}
 											options={availableMemberOptions}
-											placeholder="Select members"
-											selected={form.getValues('members').map((member) => member.id)}
+											placeholder="Select users"
+											selected={form.getValues('users').map((member) => member.userId)}
 											showBadge={false}
 										/>
 									</FormControl>
@@ -163,7 +168,7 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 								</FormItem>
 							)}
 						/>
-						{form.watch('members').length > 0 && (
+						{form.watch('users').length > 0 && (
 							<div className="rounded-md border">
 								<Table>
 									<TableHeader>
@@ -174,13 +179,13 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 										</TableRow>
 									</TableHeader>
 									<TableBody>
-										{form.watch('members').map((member) => (
-											<TableRow key={member.id}>
-												<TableCell>{member.name}</TableCell>
+										{form.watch('users').map((member) => (
+											<TableRow key={member.userId}>
+												<TableCell>{member.userName}</TableCell>
 												<TableCell>
 													<Select
 														defaultValue={member.role}
-														onValueChange={(value: TeamMember['role']) => handleRoleChange(member.id, value)}
+														onValueChange={(value: TeamMember['role']) => handleRoleChange(member.userId, value)}
 													>
 														<SelectTrigger className="w-[140px]">
 															<SelectValue />
@@ -197,7 +202,7 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 												<TableCell className="text-right">
 													<Button
 														className="text-red-500 hover:text-red-600"
-														onClick={() => handleRemoveMember(member.id)}
+														onClick={() => handleRemoveUser(member.userId)}
 														size="sm"
 														type="button"
 														variant="ghost"
@@ -213,10 +218,10 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 						)}
 						<Button
 							className="w-full bg-themecolor-600 hover:bg-themecolor-500"
-							disabled={form.watch('members').length === 0}
+							disabled={form.watch('users').length === 0}
 							type="submit"
 						>
-							Add members to the team
+							Add users to the team
 						</Button>
 					</form>
 				</Form>
@@ -243,7 +248,7 @@ const TeamsPage = () => {
 	const queryClient = useQueryClient();
 	const { data: token } = useToken();
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-	const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
+	const [isAddUsersModalOpen, setIsAddUsersModalOpen] = useState(false);
 	const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState('');
 
@@ -294,15 +299,18 @@ const TeamsPage = () => {
 		},
 		onMutate: async (newTeam) => {
 			await queryClient.cancelQueries({ queryKey: ['/teams'] });
-			const previousTeams = queryClient.getQueryData<Team[]>(['/teams']) ?? [];
+			const previousTeams = queryClient.getQueryData<{ data: Team[]; total: number }>(['/teams']) ?? [];
 
-			const newTeamData = {
+			const newTeamData: Team = {
 				...newTeam,
 				id: Date.now().toString(),
-				members: [],
+				users: [],
 			};
 
-			queryClient.setQueryData<Team[]>(['/teams'], (old = []) => [...old, newTeamData]);
+			queryClient.setQueryData<{ data: Team[]; total: number }>(['/teams'], (old) => {
+				if (!old) return old;
+				return { ...old, data: [...old.data, newTeamData] };
+			});
 
 			return { previousTeams };
 		},
@@ -313,8 +321,8 @@ const TeamsPage = () => {
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/teams'] }),
 	});
 
-	const { mutate: updateTeamMembers } = useMutation({
-		mutationFn: async ({ teamId, members }: { members: TeamMember[]; teamId: string }) => {
+	const { mutate: updateTeamUsers } = useMutation({
+		mutationFn: async ({ teamId, users }: { teamId: string; users: TeamMember[] }) => {
 			const { data, error } = await Api.PATCH(`/teams/{id}`, {
 				params: {
 					header: {
@@ -323,15 +331,10 @@ const TeamsPage = () => {
 					path: { id: teamId },
 				},
 				body: {
-					users: members.map((member) => ({
-						userId: member.id,
-						role:
-							member.role === 'Team lead'
-								? 'Team Lead'
-								: member.role === 'Sales'
-									? 'Sales Executive'
-									: 'Service Executive',
-						companyId: 'Blue Company',
+					users: users.map((member) => ({
+						userId: member.userId,
+						role: member.role,
+						companyId: 'Blue Company' as const,
 					})),
 				},
 			});
@@ -340,18 +343,24 @@ const TeamsPage = () => {
 
 			return data;
 		},
-		onMutate: async ({ teamId, members }) => {
+		onMutate: async ({ teamId, users }) => {
 			await queryClient.cancelQueries({ queryKey: ['/teams'] });
-			const previousTeams = queryClient.getQueryData<Team[]>(['/teams']) ?? [];
+			const previousTeams = queryClient.getQueryData<{ data: Team[]; total: number }>(['/teams']) ?? [];
 
-			queryClient.setQueryData<Team[]>(['/teams'], (old = []) =>
-				old.map((team) => (team.id === teamId ? { ...team, members } : team)),
-			);
+			queryClient.setQueryData<{ data: Team[]; total: number }>(['/teams'], (old) => {
+				if (!old) return old;
+				const updatedTeams = old.data.map((team) => {
+					if (team.id === teamId) return { ...team, users };
+
+					return team;
+				});
+				return { ...old, data: updatedTeams };
+			});
 
 			return { previousTeams };
 		},
 		onError: (err, _variables, context) => {
-			console.error('Failed to update team members:', err);
+			console.error('Failed to update team users:', err);
 			queryClient.setQueryData(['/teams'], context?.previousTeams);
 		},
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/teams'] }),
@@ -363,29 +372,19 @@ const TeamsPage = () => {
 		setIsCreateModalOpen(false);
 	};
 
-	const handleAddMembersSubmit = (values: { members: TeamMember[] }) => {
+	const handleAddUsersSubmit = (values: { users: TeamMember[] }) => {
 		if (!selectedTeamId) return;
-		updateTeamMembers({ teamId: selectedTeamId, members: values.members });
-		setIsAddMembersModalOpen(false);
+		updateTeamUsers({ teamId: selectedTeamId, users: values.users });
+		setIsAddUsersModalOpen(false);
 	};
 
-	const filteredTeams = useMemo(() => {
-		const query = searchQuery.toLowerCase();
-		return teams.filter(
-			(team) =>
-				team.name.toLowerCase().includes(query) ||
-				team.description.toLowerCase().includes(query) ||
-				team.members.some(
-					(member) => member.name.toLowerCase().includes(query) || member.role.toLowerCase().includes(query),
-				),
-		);
-	}, [teams, searchQuery]);
+	const filteredTeams = useMemo(() => teams?.data ?? [], [teams]);
 
-	const selectedTeam = useMemo(() => teams.find((team) => team.id === selectedTeamId), [teams, selectedTeamId]);
+	const selectedTeam = useMemo(() => teams?.data.find((team) => team.id === selectedTeamId), [teams, selectedTeamId]);
 
-	const handleAddMembers = (teamId: string) => {
+	const handleAddUsers = (teamId: string) => {
 		setSelectedTeamId(teamId);
-		setIsAddMembersModalOpen(true);
+		setIsAddUsersModalOpen(true);
 	};
 
 	const handleSearch = () => {
@@ -401,7 +400,7 @@ const TeamsPage = () => {
 					<div className="mb-6 flex items-center justify-between">
 						<h1 className="text-2xl font-bold">Teams</h1>
 					</div>
-					{teams.length === 0 ? (
+					{teams?.data.length === 0 ? (
 						<Button
 							className="mt-4 flex items-center gap-2 bg-themecolor-600 hover:bg-themecolor-500"
 							onClick={() => setIsCreateModalOpen(true)}
@@ -453,27 +452,27 @@ const TeamsPage = () => {
 											</CardHeader>
 											<CardFooter className="w-full justify-between">
 												<p className="text-sm font-medium leading-5 text-foreground">
-													Team Members: {team.members.length || 'None'}
+													Team Users: {team.users.length || 'None'}
 												</p>
-												{team.members.length > 0 && (
+												{team.users.length > 0 && (
 													<div className="flex -space-x-2">
-														{team.members.slice(0, 3).map((member) => (
-															<Avatar className="border-2 border-background" key={member.id}>
-																<AvatarFallback className="bg-muted">{getInitials(member.name)}</AvatarFallback>
+														{team.users.slice(0, 3).map((member) => (
+															<Avatar className="border-2 border-background" key={member.userId}>
+																<AvatarFallback className="bg-muted">{getInitials(member.userName)}</AvatarFallback>
 															</Avatar>
 														))}
-														{team.members.length > 3 && (
+														{team.users.length > 3 && (
 															<Badge className="ml-2 rounded-full" variant="secondary">
-																+{team.members.length - 3}
+																+{team.users.length - 3}
 															</Badge>
 														)}
 													</div>
 												)}
 												<Button
 													className="bg-themecolor-600 hover:bg-themecolor-500"
-													onClick={() => handleAddMembers(team.id)}
+													onClick={() => handleAddUsers(team.id)}
 												>
-													Add Members
+													Add Users
 												</Button>
 											</CardFooter>
 										</Card>
@@ -527,14 +526,14 @@ const TeamsPage = () => {
 							</Form>
 						</DialogContent>
 					</Dialog>
-					<AddMembersDialog
-						existingMembers={selectedTeam?.members ?? []}
-						isOpen={isAddMembersModalOpen}
+					<AddUsersDialog
+						existingUsers={selectedTeam?.users ?? []}
+						isOpen={isAddUsersModalOpen}
 						onClose={() => {
-							setIsAddMembersModalOpen(false);
+							setIsAddUsersModalOpen(false);
 							setSelectedTeamId(null);
 						}}
-						onSubmit={handleAddMembersSubmit}
+						onSubmit={handleAddUsersSubmit}
 					/>
 				</>
 			)}

@@ -2,19 +2,17 @@ import clsx from 'clsx';
 import { ArrowDownUp } from 'lucide-react';
 import { div as MotionDiv } from 'motion/react-client';
 
-import { TicketCard } from '@/app/dashboard/tickets/ticket-card';
-
-import type { Ticket } from '@/app/dashboard/tickets/ticket-list';
+import { TicketCard, type TicketWithLeadDto } from '@/app/dashboard/tickets/ticket-card';
 
 interface TicketBoardProps {
-	readonly onStatusChange: (ticketId: string, status: Ticket['status']) => void;
-	readonly tickets: Ticket[];
+	readonly onStatusChange: (ticketId: string, status: TicketWithLeadDto['status']) => void;
+	readonly tickets: TicketWithLeadDto[];
 }
 
-const statusGroups: { border: string; color: string; label: string; value: Ticket['status'] }[] = [
-	{ label: 'Pending', value: 'pending', border: 'border-yellow-500', color: 'text-yellow-500' },
-	{ label: 'Follow-up', value: 'follow-up', border: 'border-themecolor-600', color: 'text-themecolor-600' },
-	{ label: 'Completed', value: 'completed', border: 'border-green-600', color: 'text-green-600' },
+const statusGroups: { border: string; color: string; label: string; value: TicketWithLeadDto['status'] }[] = [
+	{ label: 'Pending', value: 'Pending', border: 'border-yellow-500', color: 'text-yellow-500' },
+	{ label: 'Follow-up', value: 'Follow-Up', border: 'border-themecolor-600', color: 'text-themecolor-600' },
+	{ label: 'Completed', value: 'Completed', border: 'border-green-600', color: 'text-green-600' },
 ];
 
 export function TicketBoard({ tickets, onStatusChange }: TicketBoardProps) {
@@ -42,7 +40,7 @@ export function TicketBoard({ tickets, onStatusChange }: TicketBoardProps) {
 									animate={{ opacity: 1, scale: 1 }}
 									exit={{ opacity: 0, scale: 0.8 }}
 									initial={{ opacity: 0, scale: 0.8 }}
-									key={ticket.ticketId}
+									key={ticket.id}
 									layout
 									transition={{
 										layout: { duration: 0.3 },
@@ -50,11 +48,7 @@ export function TicketBoard({ tickets, onStatusChange }: TicketBoardProps) {
 										scale: { duration: 0.2 },
 									}}
 								>
-									<TicketCard
-										{...ticket}
-										minimal
-										onStatusChange={(status) => onStatusChange(ticket.ticketId, status)}
-									/>
+									<TicketCard {...ticket} minimal onStatusChange={(status) => onStatusChange(ticket.id, status)} />
 								</MotionDiv>
 							))}
 						</div>

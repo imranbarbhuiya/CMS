@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { setCookie } from 'cookies-next/client';
 import { div as MotionDiv } from 'motion/react-client';
 import Link from 'next/link';
@@ -24,14 +24,17 @@ const LoginPage = () => {
 	const {
 		register,
 		handleSubmit,
-		formState: { errors, isSubmitting },
+		formState: { errors },
 	} = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 	});
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
-	const { mutateAsync, error } = useMutation({
+	const { mutateAsync, error, isPending } = useMutation({
 		mutationFn: async (data: LoginFormData) => {
+			queryClient.clear();
+
 			const res = await Api.POST('/login', {
 				body: {
 					email: data.email,
@@ -137,7 +140,7 @@ const LoginPage = () => {
 							type="submit"
 							variant="default"
 						>
-							{isSubmitting ? 'Please wait...' : 'Login'}
+							{isPending ? 'Please wait...' : 'Login'}
 						</Button>
 						{error && <p className="text-center text-sm text-red-600">{error.message}</p>}
 					</div>

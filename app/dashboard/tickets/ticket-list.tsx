@@ -2,26 +2,12 @@
 
 import { useState } from 'react';
 
-import { TicketCard } from '@/app/dashboard/tickets/ticket-card';
+import { TicketCard, type TicketWithLeadDto } from '@/app/dashboard/tickets/ticket-card';
 import { Pagination } from '@/components/pagination';
 
-export type TicketStatus = 'Completed' | 'Pending' | 'Follow-Up';
-
-export interface Ticket {
-	additionalNote?: string;
-	billingAddress: string;
-	email: string;
-	id: string;
-	name: string;
-	paymentMode: string;
-	phone: string;
-	status: TicketStatus;
-	subscriptionDetails: string;
-}
-
 interface TicketListProps {
-	readonly onStatusChangeAction: (params: { status: TicketStatus; ticketId: string }) => void;
-	readonly tickets: Ticket[];
+	readonly onStatusChangeAction: (params: { status: TicketWithLeadDto['status']; ticketId: string }) => void;
+	readonly tickets: TicketWithLeadDto[];
 }
 
 const itemsPerPage = 6;
@@ -42,7 +28,6 @@ export const TicketList = ({ onStatusChangeAction, tickets }: TicketListProps) =
 						key={ticket.id}
 						{...ticket}
 						onStatusChange={(status) => onStatusChangeAction({ status, ticketId: ticket.id })}
-						ticketId={ticket.id}
 					/>
 				))}
 			</div>

@@ -29,6 +29,7 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from '@/components/ui/sidebar';
+import { useTeam } from '@/hooks/use-team';
 import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,69 @@ export function MainSidebar() {
 			console.error('Error during logout:', error);
 		},
 	});
+
+	const { data: team } = useTeam(user?.team);
+
+	const tabs = [];
+
+	const isSalesPerson = team?.users.some((usr) => usr.userId === user?.id && usr.role === 'Sales Executive');
+	const isServicePerson = team?.users.some((usr) => usr.userId === user?.id && usr.role === 'Service Executive');
+	const isSuperAdmin = user?.role === 'SuperAdmin';
+
+	if (isSalesPerson || isSuperAdmin) {
+		tabs.push(
+			{
+				name: 'Overview',
+				icon: LayoutDashboard,
+				link: '/dashboard',
+			},
+			{
+				name: 'Leads',
+				icon: UserRound,
+				link: '/dashboard/leads',
+			},
+		);
+	}
+
+	if (isServicePerson || isSuperAdmin) {
+		tabs.push(
+			{
+				name: 'Ticket Overview',
+				icon: Ticket,
+				link: '/dashboard/ticket-overview',
+			},
+			{
+				name: 'Tickets',
+				icon: Ticket,
+				link: '/dashboard/tickets',
+			},
+		);
+	}
+
+	if (user?.role === 'SuperAdmin') {
+		tabs.push(
+			{
+				name: 'Manage User',
+				icon: UserRound,
+				link: '/dashboard/manage-user',
+			},
+			{
+				name: 'Teams',
+				icon: Users,
+				link: '/dashboard/teams',
+			},
+			{
+				name: 'Announcement',
+				icon: Megaphone,
+				link: '/dashboard/announcement',
+			},
+			{
+				name: 'Audit Logs',
+				icon: ScrollText,
+				link: '/dashboard/audit-logs',
+			},
+		);
+	}
 
 	return (
 		<Sidebar
@@ -88,7 +152,7 @@ export function MainSidebar() {
 					<SidebarGroupLabel>Dashboard</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							<SidebarMenuItem>
+							{/* <SidebarMenuItem>
 								<SidebarMenuButton
 									asChild
 									className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
@@ -175,7 +239,20 @@ export function MainSidebar() {
 										<span>Audit Logs</span>
 									</Link>
 								</SidebarMenuButton>
-							</SidebarMenuItem>
+							</SidebarMenuItem> */}
+							{tabs.map((tab) => (
+								<SidebarMenuItem key={tab.name}>
+									<SidebarMenuButton
+										asChild
+										className="flex items-center gap-3 transition-all duration-300 hover:bg-themecolor-50 hover:text-themecolor-600"
+									>
+										<Link href={tab.link}>
+											<tab.icon className="size-4" />
+											<span>{tab.name}</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
