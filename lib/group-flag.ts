@@ -1,11 +1,21 @@
 import { flag } from 'flags/next';
 
+import { Api } from './fetch';
+
 export const isRoseGroupFlag = flag<boolean, boolean>({
 	key: 'rose-group-flag',
-	identify({ cookies }) {
-		const group = cookies.get('group')?.value;
+	async identify({ cookies }) {
+		const token = cookies.get('token')?.value;
 
-		return group === 'rose';
+		const { data } = await Api.GET('/teams/me', {
+			params: {
+				header: {
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		});
+
+		return data?.companyId === 'Red Company';
 	},
 	decide({ entities }) {
 		return Boolean(entities);

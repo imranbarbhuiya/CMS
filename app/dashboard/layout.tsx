@@ -2,13 +2,10 @@ import { MainHeader } from '@/app/dashboard/header';
 import { MainSidebar } from '@/app/dashboard/sidebar';
 import { SocketProvider } from '@/components/SocketProvider';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { isRoseGroupFlag } from '@/lib/group-flag';
 
-export default async function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
-	const isRoseGroup = await isRoseGroupFlag();
-
+export default function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
 	return (
-		<main className={isRoseGroup ? 'rose' : ''}>
+		<main>
 			<SidebarProvider>
 				<SocketProvider>
 					<div className="flex h-screen w-full">

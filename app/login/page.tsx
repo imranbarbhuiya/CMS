@@ -5,7 +5,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { setCookie } from 'cookies-next/client';
 import { div as MotionDiv } from 'motion/react-client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -28,7 +27,6 @@ const LoginPage = () => {
 	} = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 	});
-	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	const { mutateAsync, error, isPending } = useMutation({
@@ -49,18 +47,8 @@ const LoginPage = () => {
 
 			setCookie('token', res.data.accessToken!);
 
-			const teamRes = await Api.GET('/teams/me', {
-				params: {
-					header: {
-						Authorization: `Bearer ${res.data.accessToken}`,
-					},
-				},
-			});
-
-			if (teamRes.data?.companyId === 'Red Company') setCookie('group', 'rose');
-			else setCookie('group', 'blue');
-
-			router.push('/dashboard/leads');
+			// eslint-disable-next-line react-compiler/react-compiler
+			window.location.pathname = '/dashboard/leads';
 
 			return res.data;
 		},

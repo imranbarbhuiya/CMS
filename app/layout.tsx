@@ -1,6 +1,7 @@
 import { Geist } from 'next/font/google';
 
 import { Toaster } from '@/components/ui/sonner';
+import { isRoseGroupFlag } from '@/lib/group-flag';
 
 import { Providers } from './providers';
 
@@ -17,14 +18,16 @@ export const metadata: Metadata = {
 	description: 'cms',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const isRoseGroup = await isRoseGroupFlag();
+
 	return (
 		<html lang="en">
-			<body className={`${geist.className} antialiased`}>
+			<body className={`${geist.className} ${isRoseGroup ? 'rose' : ''} antialiased`}>
 				<Providers>
 					<Toaster />
 					{children}
