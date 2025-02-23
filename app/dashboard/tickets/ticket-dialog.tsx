@@ -21,6 +21,7 @@ interface LeadDialogProps {
 	readonly open: boolean;
 	readonly payment?: string;
 	readonly subscription?: string;
+	readonly ticketId?: string;
 }
 
 export function ForwardLeadDialog({
@@ -32,6 +33,7 @@ export function ForwardLeadDialog({
 	address,
 	payment,
 	note,
+	ticketId,
 }: LeadDialogProps) {
 	const queryClient = useQueryClient();
 	const { data: token } = useToken();
@@ -44,7 +46,7 @@ export function ForwardLeadDialog({
 						Authorization: `Bearer ${token}`,
 					},
 					path: {
-						id: lead!.id,
+						id: ticketId!,
 					},
 				},
 			});

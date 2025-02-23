@@ -184,6 +184,7 @@ export function SocketProvider({ children }: { readonly children: React.ReactNod
 				open={ticketDialogOpen}
 				payment={currentTicket?.payment}
 				subscription={currentTicket?.subscription}
+				ticketId={currentTicket?.id}
 			/>
 		</>
 	);

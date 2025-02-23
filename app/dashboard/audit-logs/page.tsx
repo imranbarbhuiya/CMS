@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { FileOutput, Search } from 'lucide-react';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 
 import { AuditLogsTable } from '@/app/dashboard/audit-logs/audit-logs-table';
@@ -15,7 +16,7 @@ export default function AuditLogsPage() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [itemsPerPage, setItemsPerPage] = useState(10);
 	const searchInputRef = useRef<HTMLInputElement>(null);
-	const [searchTerm, setSearchTerm] = useState('');
+	const [searchTerm, setSearchTerm] = useQueryState('search', parseAsString.withDefault(''));
 
 	const { data, isLoading } = useQuery({
 		queryKey: ['/audit-logs', currentPage, itemsPerPage, searchTerm],
@@ -46,14 +47,26 @@ export default function AuditLogsPage() {
 	const totalItems = data?.total ?? 0;
 	const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-	const handleExport = () => {
-		if (!logs.length) return;
-		const jsonString = JSON.stringify(logs, null, 2);
-		const blob = new Blob([jsonString], { type: 'application/json' });
+	const handleExport = async () => {
+		const { data: excelData } = await Api.GET('/audit-log', {
+			params: {
+				header: {
+					Authorization: `Bearer ${token}`,
+				},
+				query: {
+					export: true,
+					search: searchTerm || undefined,
+				},
+			},
+		});
+
+		const blob = new Blob([Buffer.from(excelData as unknown as string)], {
+			type: 'text/csv',
+		});
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
-		link.download = 'audit_logs.json';
+		link.download = 'audit_logs.csv';
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -61,7 +74,7 @@ export default function AuditLogsPage() {
 	};
 
 	const handleSearch = () => {
-		setSearchTerm(searchInputRef.current?.value ?? '');
+		void setSearchTerm(searchInputRef.current?.value ?? '');
 		setCurrentPage(1);
 	};
 
@@ -74,6 +87,7 @@ export default function AuditLogsPage() {
 				<div className="relative w-full max-w-sm">
 					<Input
 						className="pr-8"
+						defaultValue={searchTerm}
 						onKeyDown={(ev) => {
 							if (ev.key === 'Enter') handleSearch();
 						}}

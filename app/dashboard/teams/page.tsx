@@ -391,6 +391,32 @@ const TeamsPage = () => {
 		// Search query is already being handled by filteredTeams memo
 	};
 
+	const handleExport = async () => {
+		const { data: excelData } = await Api.GET('/teams', {
+			params: {
+				header: {
+					Authorization: `Bearer ${token}`,
+				},
+				query: {
+					export: true,
+					search: searchQuery || undefined,
+				},
+			},
+		});
+
+		const blob = new Blob([Buffer.from(excelData as unknown as string)], {
+			type: 'text/csv',
+		});
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement('a');
+		link.href = url;
+		link.download = 'teams.csv';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(url);
+	};
+
 	return (
 		<div className="p-6">
 			{teamsError ? (
@@ -432,7 +458,7 @@ const TeamsPage = () => {
 										<PlusIcon className="size-4" /> Create Team
 									</Button>
 								</div>
-								<Button size="sm" variant="outline">
+								<Button onClick={handleExport} size="sm" variant="outline">
 									<FileOutput className="size-4" />
 									Export All Data
 								</Button>
