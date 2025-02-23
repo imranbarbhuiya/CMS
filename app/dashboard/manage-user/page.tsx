@@ -39,7 +39,10 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToken } from '@/hooks/use-token';
+import { Api } from '@/lib/fetch';
 
+import type { UserDto } from './manage-user-dialog';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
 const userSchema = z.object({
@@ -50,120 +53,75 @@ const userSchema = z.object({
 
 type UserFormValues = z.infer<typeof userSchema>;
 
-interface User {
-	email: string;
-	id: number;
-	name: string;
-	teamName: string;
-	teamRole: string;
-}
-
-const fetchUsers = (): User[] => [
-	{
-		id: 1,
-		name: 'Emily Carter',
-		email: 'ken99@yahoo.com',
-		teamName: 'Team A',
-		teamRole: 'Team Lead',
-	},
-	{
-		id: 2,
-		name: 'Priya Sharma',
-		email: 'abe45@gmail.com',
-		teamName: 'Team A',
-		teamRole: 'Sales',
-	},
-	{
-		id: 3,
-		name: 'Emily Carter 3',
-		email: 'ken9@yahoo.com',
-		teamName: 'Team A',
-		teamRole: 'Sales',
-	},
-	{
-		id: 4,
-		name: 'Priya Sharma 2',
-		email: 'abe55@gmail.com',
-		teamName: 'Team A',
-		teamRole: 'Service',
-	},
-	{
-		id: 5,
-		name: 'Ames Henderson',
-		email: 'montserrat44@gmail.com',
-		teamName: 'Team B',
-		teamRole: 'Team Lead',
-	},
-	{
-		id: 6,
-		name: 'Ames Henderson 2',
-		email: 'montserrat45@gmail.com',
-		teamName: 'Team B',
-		teamRole: 'Sales',
-	},
-	{
-		id: 7,
-		name: 'Emily Carter 1',
-		email: 'em2@yahoo.com',
-		teamName: 'Team B',
-		teamRole: 'Service',
-	},
-	{
-		id: 8,
-		name: 'Ames Henderson',
-		email: 'montserrat44@gmail.com',
-		teamName: 'Team B',
-		teamRole: 'Sales',
-	},
-	{
-		id: 9,
-		name: 'Michael Nguyen',
-		email: 'montserrat44@gmail.com',
-		teamName: 'Not Assigned',
-		teamRole: 'Not Assigned',
-	},
-];
-
 export default function ManageUserPage() {
+	const { data: token } = useToken();
 	const queryClient = useQueryClient();
 	const [open, setOpen] = useState(false);
 	const [isEdit, setIsEdit] = useState(false);
-	const [user, setUser] = useState<User | null>(null);
+	const [user, setUser] = useState<Omit<UserDto, 'password'> | null>(null);
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-	const [userToDelete, setUserToDelete] = useState<User | null>(null);
+	const [userToDelete, setUserToDelete] = useState<Omit<UserDto, 'password'> | null>(null);
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [itemsPerPage, setItemsPerPage] = useState(10);
+	const [searchTerm, setSearchTerm] = useState('');
 
-	const handleDeleteUser = (user: User) => {
+	const handleDeleteUser = (user: Omit<UserDto, 'password'>) => {
 		setUserToDelete(user);
 		setDeleteConfirmOpen(true);
 	};
 
-	const { data: users = [] } = useQuery({
-		queryKey: ['users'],
-		queryFn: fetchUsers,
+	const { data: users } = useQuery({
+		queryKey: ['/all', searchTerm, currentPage, itemsPerPage],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/all', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					query: {
+						page: currentPage,
+						limit: itemsPerPage,
+						search: searchTerm || undefined,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data;
+		},
+		enabled: Boolean(token),
 	});
 
 	const { mutate: addUser } = useMutation({
-		mutationFn: async (newUser: User) => {
-			try {
-				// This would be replaced with an actual API call
-				return await Promise.resolve(newUser);
-			} catch (error) {
-				console.error('Failed to add user:', error);
-				throw error;
-			}
+		mutationFn: async (newUser: Omit<UserDto, 'id' | 'createdAt' | 'updatedAt'>) => {
+			const { data, error } = await Api.POST('/register', {
+				body: {
+					name: newUser.name,
+					email: newUser.email,
+					password: newUser.password,
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data;
 		},
 		onMutate: async (newUser) => {
 			try {
-				// Cancel any outgoing refetches
-				await queryClient.cancelQueries({ queryKey: ['users'] });
+				await queryClient.cancelQueries({ queryKey: ['/all'] });
 
-				// Snapshot the previous value
-				const previousUsers = queryClient.getQueryData<User[]>(['users']) ?? [];
+				const previousUsers = queryClient.getQueryData<UserDto[]>(['/all']) ?? [];
 
-				// Optimistically update to the new value
-				queryClient.setQueryData<User[]>(['users'], (old = []) => [...old, newUser]);
+				queryClient.setQueryData<UserDto[]>(['/all'], (old) => [
+					...(old ?? []),
+					{
+						...newUser,
+						id: Math.floor(Math.random() * 1_000).toString(),
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+					},
+				]);
 
-				// Return a context object with the snapshotted value
 				return { previousUsers };
 			} catch (error) {
 				console.error('Failed to prepare mutation:', error);
@@ -172,30 +130,42 @@ export default function ManageUserPage() {
 		},
 		onError: (err, _newUser, context) => {
 			console.error('Failed to add user:', err);
-			// If the mutation fails, use the context returned from onMutate to roll back
-			queryClient.setQueryData(['users'], context?.previousUsers);
+			queryClient.setQueryData(['/all'], context?.previousUsers);
+			toast.error('Failed to add user');
 		},
-		// onSettled: async () => {
-		// 	await queryClient.invalidateQueries({ queryKey: ['users'] });
-		// },
+		onSuccess: () => {
+			toast.success('User added successfully');
+			void queryClient.invalidateQueries({ queryKey: ['/all'] });
+		},
 	});
 
 	const { mutate: updateUser } = useMutation({
-		mutationFn: async (updatedUser: User) => {
-			try {
-				// This would be replaced with an actual API call
-				return await Promise.resolve(updatedUser);
-			} catch (error) {
-				console.error('Failed to update user:', error);
-				throw error;
-			}
+		mutationFn: async (updatedUser: UserDto) => {
+			const { data, error } = await Api.PATCH(`/{id}/update`, {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					path: {
+						id: updatedUser.id,
+					},
+				},
+				body: {
+					name: updatedUser.name,
+					email: updatedUser.email,
+					password: updatedUser.password || undefined,
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data;
 		},
 		onMutate: async (updatedUser) => {
 			try {
-				await queryClient.cancelQueries({ queryKey: ['users'] });
-				const previousUsers = queryClient.getQueryData<User[]>(['users']) ?? [];
+				await queryClient.cancelQueries({ queryKey: ['/all'] });
+				const previousUsers = queryClient.getQueryData<UserDto[]>(['/all']) ?? [];
 
-				queryClient.setQueryData<User[]>(['users'], (old = []) =>
+				queryClient.setQueryData<UserDto[]>(['/all'], (old = []) =>
 					old.map((user) => (user.id === updatedUser.id ? updatedUser : user)),
 				);
 
@@ -207,26 +177,37 @@ export default function ManageUserPage() {
 		},
 		onError: (err, _updatedUser, context) => {
 			console.error('Failed to update user:', err);
-			queryClient.setQueryData(['users'], context?.previousUsers);
+			queryClient.setQueryData(['/all'], context?.previousUsers);
+			toast.error('Failed to update user');
+		},
+		onSuccess: () => {
+			toast.success('User updated successfully');
+			void queryClient.invalidateQueries({ queryKey: ['/all'] });
 		},
 	});
 
 	const { mutate: deleteUser } = useMutation({
-		mutationFn: async (userId: number) => {
-			try {
-				// This would be replaced with an actual API call
-				return await Promise.resolve(userId);
-			} catch (error) {
-				console.error('Failed to delete user:', error);
-				throw error;
-			}
+		mutationFn: async (userId: string) => {
+			const { data, error } = await Api.DELETE(`/{id}/delete`, {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					path: {
+						id: userId,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data;
 		},
 		onMutate: async (userId) => {
 			try {
-				await queryClient.cancelQueries({ queryKey: ['users'] });
-				const previousUsers = queryClient.getQueryData<User[]>(['users']) ?? [];
+				await queryClient.cancelQueries({ queryKey: ['/all'] });
+				const previousUsers = queryClient.getQueryData<UserDto[]>(['/all']) ?? [];
 
-				queryClient.setQueryData<User[]>(['users'], (old = []) => old.filter((user) => user.id !== userId));
+				queryClient.setQueryData<UserDto[]>(['/all'], (old = []) => old.filter((user) => user.id !== userId));
 
 				return { previousUsers };
 			} catch (error) {
@@ -236,11 +217,12 @@ export default function ManageUserPage() {
 		},
 		onError: (err, _userId, context) => {
 			console.error('Failed to delete user:', err);
-			queryClient.setQueryData(['users'], context?.previousUsers);
+			queryClient.setQueryData(['/all'], context?.previousUsers);
 			toast.error('Failed to delete user');
 		},
 		onSuccess: () => {
 			toast.success('User deleted successfully');
+			void queryClient.invalidateQueries({ queryKey: ['/all'] });
 		},
 	});
 
@@ -289,7 +271,19 @@ export default function ManageUserPage() {
 		manageUserForm.reset();
 	};
 
-	const columns: ColumnDef<User>[] = [
+	const columns: ColumnDef<
+		{
+			accessToken?: string | null;
+			createdAt: string;
+			email: string;
+			id: string;
+			name: string;
+			role?: 'SuperAdmin' | 'Manager' | 'User';
+			team?: string | null;
+			updatedAt: string;
+		},
+		any
+	>[] = [
 		{
 			id: 'select',
 			header: ({ table }) => (
@@ -369,36 +363,37 @@ export default function ManageUserPage() {
 		},
 	];
 
-	const handleExport = () => {
-		const jsonString = JSON.stringify(users, null, 2);
-		const blob = new Blob([jsonString], { type: 'application/json' });
+	const handleExport = async () => {
+		const { data: excelData } = await Api.GET('/all', {
+			params: {
+				header: {
+					Authorization: `Bearer ${token}`,
+				},
+				query: {
+					export: true,
+					search: searchTerm || undefined,
+				},
+			},
+		});
+
+		// const jsonString = JSON.stringify(Buffer.from(excelData), null, 2);
+		const blob = new Blob([Buffer.from(excelData as unknown as string)], {
+			type: 'text/csv',
+		});
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
 		link.href = url;
-		link.download = 'users.json';
+		link.download = 'users.csv';
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 	};
 
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [currentPage, setCurrentPage] = useState(1);
-	const [itemsPerPage, setItemsPerPage] = useState(10);
 	const [rowSelection, setRowSelection] = useState({});
 	const searchInputRef = useRef<HTMLInputElement>(null);
-	const [searchTerm, setSearchTerm] = useState('');
 
-	const filteredUsers = useMemo(() => {
-		const term = searchTerm.toLowerCase();
-		return users.filter(
-			(user) =>
-				user.name.toLowerCase().includes(term) ||
-				user.email.toLowerCase().includes(term) ||
-				user.teamName.toLowerCase().includes(term) ||
-				user.teamRole.toLowerCase().includes(term),
-		);
-	}, [users, searchTerm]);
+	const filteredUsers = useMemo(() => users?.data ?? [], [users]);
 
 	const handleSearch = () => {
 		setSearchTerm(searchInputRef.current?.value ?? '');
@@ -430,7 +425,7 @@ export default function ManageUserPage() {
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
-		pageCount: Math.ceil(filteredUsers.length / itemsPerPage),
+		pageCount: Math.ceil((users?.count ?? 0) / itemsPerPage),
 	});
 
 	return (

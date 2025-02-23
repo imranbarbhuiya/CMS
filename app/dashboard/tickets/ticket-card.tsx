@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
-type TicketStatus = 'completed' | 'pending' | 'follow-up';
+type TicketStatus = 'Completed' | 'Pending' | 'Follow-Up';
 
 interface TicketCardProps {
 	readonly additionalNote?: string;
@@ -79,9 +79,9 @@ export const TicketCard = ({
 							<SelectValue placeholder="Select status" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="completed">Completed</SelectItem>
-							<SelectItem value="pending">Pending</SelectItem>
-							<SelectItem value="follow-up">Follow-up</SelectItem>
+							<SelectItem value="Completed">Completed</SelectItem>
+							<SelectItem value="Pending">Pending</SelectItem>
+							<SelectItem value="Follow-Up">Follow-up</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>

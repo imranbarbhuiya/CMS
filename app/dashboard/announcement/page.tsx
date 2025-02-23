@@ -1,39 +1,19 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { MultiSelect } from '@/components/multi-select';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-
-interface User {
-	id: string;
-	name: string;
-}
-
-interface Team {
-	id: string;
-	name: string;
-}
-
-interface Announcement {
-	author: {
-		name: string;
-	};
-	date: string;
-	members: string[];
-	message: string;
-	teams: string[];
-}
+import { useToken } from '@/hooks/use-token';
+import { Api } from '@/lib/fetch';
 
 const formSchema = z
 	.object({
@@ -61,38 +41,48 @@ const formSchema = z
 		}
 	});
 
-function AnnouncementToast({ announcement }: { readonly announcement: Announcement }) {
-	return (
-		<div className="flex items-start gap-4">
-			<Avatar className="size-8">
-				<AvatarFallback>{announcement.author.name.charAt(0)}</AvatarFallback>
-			</Avatar>
-			<div className="flex flex-col gap-1">
-				<div className="flex items-center gap-2">
-					<span className="font-medium">{announcement.author.name}</span>
-					<Badge className="text-[10px]" variant="secondary">
-						{announcement.date}
-					</Badge>
-				</div>
-				<p className="text-sm text-muted-foreground">{announcement.message}</p>
-			</div>
-		</div>
-	);
-}
-
 export default function AnnouncementPage() {
-	const { data: users = [] } = useQuery<User[]>({
-		queryKey: ['users'],
+	const { data: token } = useToken();
+
+	const { data: users } = useQuery({
+		queryKey: ['/all'],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/all', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data;
+		},
+		enabled: Boolean(token),
 	});
 
-	const { data: teams = [] } = useQuery<Team[]>({
-		queryKey: ['teams'],
+	const { data: teams = [] } = useQuery({
+		queryKey: ['/teams'],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/teams', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data as unknown as { id: string; name: string }[];
+		},
+		enabled: Boolean(token),
 	});
 
-	const members = users.map((user) => ({
-		value: user.id.toString(),
-		label: user.name,
-	}));
+	const members =
+		users?.data.map((user) => ({
+			value: user.id.toString(),
+			label: user.name,
+		})) ?? [];
 
 	const teamOptions = teams.map((team) => ({
 		value: team.id,
@@ -111,27 +101,31 @@ export default function AnnouncementPage() {
 
 	const sendToEveryone = form.watch('sendToEveryone');
 
-	const handleSubmit = (values: z.infer<typeof formSchema>) => {
-		const announcement: Announcement = {
-			message: values.message,
-			author: {
-				name: 'Admin', // Replace with actual logged in user name
-			},
-			date: new Date().toLocaleDateString(),
-			teams: values.teams,
-			members: values.members,
-		};
+	const mutation = useMutation({
+		mutationFn: async (values: z.infer<typeof formSchema>) => {
+			const { error } = await Api.POST('/announcement', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+				body: {},
+			});
 
-		const audio = new Audio('/notification.mp3');
-		// eslint-disable-next-line promise/prefer-await-to-then
-		audio.play().catch(console.error);
+			if (error) throw new Error(error.message ?? 'An error occurred');
+		},
+	});
 
-		toast.success('Announcement sent successfully');
+	const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+		try {
+			await mutation.mutateAsync(values);
 
-		toast(<AnnouncementToast announcement={announcement} />, {
-			duration: 4_000,
-		});
-		form.reset();
+			toast.success('Announcement sent successfully');
+
+			form.reset();
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Failed to send announcement');
+		}
 	};
 
 	return (

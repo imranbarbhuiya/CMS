@@ -19,6 +19,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToken } from '@/hooks/use-token';
 import { Api } from '@/lib/fetch';
 
+import { LeadDialog } from './lead-dialog';
+
 import type { components } from '@/openapi/api';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
@@ -64,10 +66,11 @@ export default function LeadsPage() {
 
 			return data;
 		},
+		enabled: Boolean(token),
 	});
 
 	const leads = useMemo(() => data?.data ?? [], [data]);
-	const totalItems = data?.total ?? 0;
+	const totalItems = data?.count ?? 0;
 	const totalPages = Math.ceil(totalItems / itemsPerPage);
 
 	const queryClient = useQueryClient();
@@ -387,6 +390,7 @@ export default function LeadsPage() {
 					</p>
 				</div>
 			)}
+			<LeadDialog onOpenChange={() => {}} open />
 		</div>
 	);
 }

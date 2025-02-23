@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Copy, KeyRound, Plus } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -9,6 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useToken } from '@/hooks/use-token';
+import { Api } from '@/lib/fetch';
+
+import type { components } from '@/openapi/api';
+
+export type UserDto = components['schemas']['UserDto'];
 
 const userSchema = z.object({
 	name: z.string().min(1, 'Name is required'),
@@ -18,24 +24,17 @@ const userSchema = z.object({
 
 type UserFormValues = z.infer<typeof userSchema>;
 
-interface User {
-	email: string;
-	id: number;
-	name: string;
-	teamName: string;
-	teamRole: string;
-}
-
 interface UserDialogProps {
+	readonly isOpen: boolean;
 	readonly mode: 'add' | 'edit';
-	readonly onUserAdded?: (user: User) => void;
-	readonly onUserUpdated?: (user: User) => void;
+	readonly onClose: () => void;
+	readonly onUserMutated: () => void;
 	readonly trigger?: React.ReactNode;
-	readonly user?: User;
+	readonly user?: UserDto;
 }
 
-export function UserDialog({ mode, user, onUserAdded, onUserUpdated, trigger }: UserDialogProps) {
-	const [open, setOpen] = useState(false);
+export function UserDialog({ mode, user, onUserMutated, isOpen, onClose, trigger }: UserDialogProps) {
+	const { data: token } = useToken();
 	const isEdit = mode === 'edit';
 
 	const form = useForm<UserFormValues>({
@@ -73,28 +72,49 @@ export function UserDialog({ mode, user, onUserAdded, onUserUpdated, trigger }: 
 		toast('Password copied to clipboard');
 	}, [form]);
 
-	const onSubmit = (data: UserFormValues) => {
-		if (isEdit && user) {
-			const updatedUser = {
-				...user,
-				...data,
-			};
-			onUserUpdated?.(updatedUser);
-		} else {
-			const newUser = {
-				...data,
-				id: Math.floor(Math.random() * 1_000),
-				teamName: 'Not Assigned',
-				teamRole: 'Not Assigned',
-			};
-			onUserAdded?.(newUser);
+	const onSubmit = async (data: UserFormValues) => {
+		try {
+			if (isEdit && user) {
+				const { error } = await Api.POST(`/{id}/update`, {
+					params: {
+						header: {
+							Authorization: `Bearer ${token}`,
+						},
+						path: {
+							id: user.id,
+						},
+					},
+					body: {
+						name: data.name,
+						email: data.email,
+						password: data.password || undefined,
+					},
+				});
+
+				if (error) throw new Error(error.message ?? 'An error occurred');
+			} else {
+				const { error } = await Api.POST('/register', {
+					body: {
+						name: data.name,
+						email: data.email,
+						password: data.password,
+					},
+				});
+
+				if (error) throw new Error(error.message ?? 'An error occurred');
+			}
+
+			onUserMutated();
+			onClose();
+			form.reset();
+			toast.success(`User ${isEdit ? 'updated' : 'added'} successfully`);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'An error occurred');
 		}
-		setOpen(false);
-		form.reset();
 	};
 
 	return (
-		<Dialog onOpenChange={setOpen} open={open}>
+		<Dialog onOpenChange={onClose} open={isOpen}>
 			<DialogTrigger asChild>
 				{trigger ?? (
 					<Button className="gap-2" variant="outline">

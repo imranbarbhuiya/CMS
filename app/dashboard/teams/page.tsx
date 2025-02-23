@@ -19,6 +19,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useToken } from '@/hooks/use-token';
+import { Api } from '@/lib/fetch';
+
+import type { components } from '@/openapi/api';
 
 interface TeamMember {
 	id: string;
@@ -26,11 +30,9 @@ interface TeamMember {
 	role: 'Team lead' | 'Sales' | 'Service' | 'Not Assigned';
 }
 
-interface Team {
-	description: string;
+interface Team extends Omit<components['schemas']['CreateTeamDto'], 'companyId'> {
 	id: string;
 	members: TeamMember[];
-	name: string;
 }
 
 const roleOptions = ['Team lead', 'Sales', 'Service', 'Not Assigned'] as const;
@@ -62,13 +64,23 @@ const AddMembersDialog = ({ isOpen, onClose, onSubmit, existingMembers }: AddMem
 		},
 	});
 
-	const { data: users = [] } = useQuery<
-		{
-			id: string;
-			name: string;
-		}[]
-	>({
-		queryKey: ['users'],
+	const { data: token } = useToken();
+
+	const { data: users = [] } = useQuery({
+		queryKey: ['/all'],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/all', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+			return data;
+		},
+		enabled: Boolean(token),
 	});
 
 	const availableMemberOptions = useMemo(
@@ -220,24 +232,6 @@ const getInitials = (name: string) =>
 		.join('')
 		.toUpperCase();
 
-const fetchTeams = (): Team[] => [
-	{
-		id: '1',
-		name: 'Team A',
-		description: 'Frontend Development Team',
-		members: [
-			{ id: '1', name: 'Emily Carter', role: 'Team lead' },
-			{ id: '2', name: 'Priya Sharma', role: 'Sales' },
-		],
-	},
-	{
-		id: '2',
-		name: 'Team B',
-		description: 'Backend Development Team',
-		members: [{ id: '3', name: 'Ames Haduson', role: 'Team lead' }],
-	},
-];
-
 const teamSchema = z.object({
 	name: z.string().min(1, 'Team name is required'),
 	description: z.string(),
@@ -247,6 +241,7 @@ type TeamFormValues = z.infer<typeof teamSchema>;
 
 const TeamsPage = () => {
 	const queryClient = useQueryClient();
+	const { data: token } = useToken();
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
 	const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -260,23 +255,46 @@ const TeamsPage = () => {
 		},
 	});
 
-	const { data: teams = [] } = useQuery({
-		queryKey: ['teams'],
-		queryFn: fetchTeams,
+	const { data: teams, error: teamsError } = useQuery({
+		queryKey: ['/teams'],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/teams', {
+				params: {
+					query: {},
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
+		enabled: Boolean(token),
 	});
 
-	// Add team mutation
 	const { mutate: addTeam } = useMutation({
-		mutationFn: async (newTeam: Omit<Team, 'id' | 'members'>) =>
-			// This would be replaced with an actual API call
-			({
-				...newTeam,
-				id: Date.now().toString(),
-				members: [],
-			}),
+		mutationFn: async (newTeam: { description: string | null; name: string }) => {
+			const { data, error } = await Api.POST('/teams', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+				body: {
+					...newTeam,
+					companyId: 'Blue Company', // This should come from user context or configuration
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
 		onMutate: async (newTeam) => {
-			await queryClient.cancelQueries({ queryKey: ['teams'] });
-			const previousTeams = queryClient.getQueryData<Team[]>(['teams']) ?? [];
+			await queryClient.cancelQueries({ queryKey: ['/teams'] });
+			const previousTeams = queryClient.getQueryData<Team[]>(['/teams']) ?? [];
 
 			const newTeamData = {
 				...newTeam,
@@ -284,25 +302,49 @@ const TeamsPage = () => {
 				members: [],
 			};
 
-			queryClient.setQueryData<Team[]>(['teams'], (old = []) => [...old, newTeamData]);
+			queryClient.setQueryData<Team[]>(['/teams'], (old = []) => [...old, newTeamData]);
 
 			return { previousTeams };
 		},
 		onError: (err, _newTeam, context) => {
 			console.error('Failed to add team:', err);
-			queryClient.setQueryData(['teams'], context?.previousTeams);
+			queryClient.setQueryData(['/teams'], context?.previousTeams);
 		},
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/teams'] }),
 	});
 
 	const { mutate: updateTeamMembers } = useMutation({
-		mutationFn: async ({ teamId, members }: { members: TeamMember[]; teamId: string }) =>
-			// This would be replaced with an actual API call
-			({ teamId, members }),
-		onMutate: async ({ teamId, members }) => {
-			await queryClient.cancelQueries({ queryKey: ['teams'] });
-			const previousTeams = queryClient.getQueryData<Team[]>(['teams']) ?? [];
+		mutationFn: async ({ teamId, members }: { members: TeamMember[]; teamId: string }) => {
+			const { data, error } = await Api.PATCH(`/teams/{id}`, {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					path: { id: teamId },
+				},
+				body: {
+					users: members.map((member) => ({
+						userId: member.id,
+						role:
+							member.role === 'Team lead'
+								? 'Team Lead'
+								: member.role === 'Sales'
+									? 'Sales Executive'
+									: 'Service Executive',
+						companyId: 'Blue Company',
+					})),
+				},
+			});
 
-			queryClient.setQueryData<Team[]>(['teams'], (old = []) =>
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
+		onMutate: async ({ teamId, members }) => {
+			await queryClient.cancelQueries({ queryKey: ['/teams'] });
+			const previousTeams = queryClient.getQueryData<Team[]>(['/teams']) ?? [];
+
+			queryClient.setQueryData<Team[]>(['/teams'], (old = []) =>
 				old.map((team) => (team.id === teamId ? { ...team, members } : team)),
 			);
 
@@ -310,8 +352,9 @@ const TeamsPage = () => {
 		},
 		onError: (err, _variables, context) => {
 			console.error('Failed to update team members:', err);
-			queryClient.setQueryData(['teams'], context?.previousTeams);
+			queryClient.setQueryData(['/teams'], context?.previousTeams);
 		},
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/teams'] }),
 	});
 
 	const handleCreateTeam = (data: TeamFormValues) => {
@@ -351,142 +394,150 @@ const TeamsPage = () => {
 
 	return (
 		<div className="p-6">
-			<div className="mb-6 flex items-center justify-between">
-				<h1 className="text-2xl font-bold">Teams</h1>
-			</div>
-			{teams.length === 0 ? (
-				<Button
-					className="mt-4 flex items-center gap-2 bg-themecolor-600 hover:bg-themecolor-500"
-					onClick={() => setIsCreateModalOpen(true)}
-				>
-					<PlusIcon className="size-4" /> Create Team
-				</Button>
+			{teamsError ? (
+				<div className="text-red-500">Error loading teams: {teamsError.message}</div>
 			) : (
 				<>
-					<div className="flex items-center justify-between pb-4">
-						<div className="flex items-center gap-3">
-							<div className="flex items-center gap-2">
-								<Input
-									className="h-9 w-64"
-									onChange={(event) => setSearchQuery(event.target.value)}
-									placeholder="Search team, member"
-									type="text"
-									value={searchQuery}
-								/>
-								<Button className="text-primary" onClick={handleSearch} size="sm" variant="secondary">
-									<Search className="size-4" />
-									Search
+					<div className="mb-6 flex items-center justify-between">
+						<h1 className="text-2xl font-bold">Teams</h1>
+					</div>
+					{teams.length === 0 ? (
+						<Button
+							className="mt-4 flex items-center gap-2 bg-themecolor-600 hover:bg-themecolor-500"
+							onClick={() => setIsCreateModalOpen(true)}
+						>
+							<PlusIcon className="size-4" /> Create Team
+						</Button>
+					) : (
+						<>
+							<div className="flex items-center justify-between pb-4">
+								<div className="flex items-center gap-3">
+									<div className="flex items-center gap-2">
+										<Input
+											className="h-9 w-64"
+											onChange={(event) => setSearchQuery(event.target.value)}
+											placeholder="Search team, member"
+											type="text"
+											value={searchQuery}
+										/>
+										<Button className="text-primary" onClick={handleSearch} size="sm" variant="secondary">
+											<Search className="size-4" />
+											Search
+										</Button>
+									</div>
+									<Button
+										className="flex items-center gap-2 bg-themecolor-600 hover:bg-themecolor-500"
+										onClick={() => setIsCreateModalOpen(true)}
+										size="sm"
+									>
+										<PlusIcon className="size-4" /> Create Team
+									</Button>
+								</div>
+								<Button size="sm" variant="outline">
+									<FileOutput className="size-4" />
+									Export All Data
 								</Button>
 							</div>
-							<Button
-								className="flex items-center gap-2 bg-themecolor-600 hover:bg-themecolor-500"
-								onClick={() => setIsCreateModalOpen(true)}
-								size="sm"
-							>
-								<PlusIcon className="size-4" /> Create Team
-							</Button>
-						</div>
-						<Button size="sm" variant="outline">
-							<FileOutput className="size-4" />
-							Export All Data
-						</Button>
-					</div>
-					<div className="space-y-4">
-						{filteredTeams.map((team) => (
-							<MotionDiv
-								animate={{ opacity: 1, y: 0 }}
-								className="w-full"
-								initial={{ opacity: 0, y: 20 }}
-								key={team.id}
-							>
-								<Card className="flex w-[620px] flex-col items-start border border-solid border-border">
-									<CardHeader>
-										<CardTitle>{team.name}</CardTitle>
-										<p className="text-sm text-muted-foreground">{team.description}</p>
-									</CardHeader>
-									<CardFooter className="w-full justify-between">
-										<p className="text-sm font-medium leading-5 text-foreground">
-											Team Members: {team.members.length || 'None'}
-										</p>
-										{team.members.length > 0 && (
-											<div className="flex -space-x-2">
-												{team.members.slice(0, 3).map((member) => (
-													<Avatar className="border-2 border-background" key={member.id}>
-														<AvatarFallback className="bg-muted">{getInitials(member.name)}</AvatarFallback>
-													</Avatar>
-												))}
-												{team.members.length > 3 && (
-													<Badge className="ml-2 rounded-full" variant="secondary">
-														+{team.members.length - 3}
-													</Badge>
+							<div className="space-y-4">
+								{filteredTeams.map((team) => (
+									<MotionDiv
+										animate={{ opacity: 1, y: 0 }}
+										className="w-full"
+										initial={{ opacity: 0, y: 20 }}
+										key={team.id}
+									>
+										<Card className="flex w-[620px] flex-col items-start border border-solid border-border">
+											<CardHeader>
+												<CardTitle>{team.name}</CardTitle>
+												<p className="text-sm text-muted-foreground">{team.description}</p>
+											</CardHeader>
+											<CardFooter className="w-full justify-between">
+												<p className="text-sm font-medium leading-5 text-foreground">
+													Team Members: {team.members.length || 'None'}
+												</p>
+												{team.members.length > 0 && (
+													<div className="flex -space-x-2">
+														{team.members.slice(0, 3).map((member) => (
+															<Avatar className="border-2 border-background" key={member.id}>
+																<AvatarFallback className="bg-muted">{getInitials(member.name)}</AvatarFallback>
+															</Avatar>
+														))}
+														{team.members.length > 3 && (
+															<Badge className="ml-2 rounded-full" variant="secondary">
+																+{team.members.length - 3}
+															</Badge>
+														)}
+													</div>
 												)}
-											</div>
+												<Button
+													className="bg-themecolor-600 hover:bg-themecolor-500"
+													onClick={() => handleAddMembers(team.id)}
+												>
+													Add Members
+												</Button>
+											</CardFooter>
+										</Card>
+									</MotionDiv>
+								))}
+							</div>
+						</>
+					)}
+					<Dialog onOpenChange={setIsCreateModalOpen} open={isCreateModalOpen}>
+						<DialogContent className="w-[400px]">
+							<DialogHeader>
+								<DialogTitle className="text-center text-2xl font-semibold text-themecolor-600">
+									Create Team
+								</DialogTitle>
+							</DialogHeader>
+							<Form {...teamForm}>
+								<form className="space-y-4 pb-4" onSubmit={teamForm.handleSubmit(handleCreateTeam)}>
+									<FormField
+										control={teamForm.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Team Name</FormLabel>
+												<FormControl>
+													<Input placeholder="Team A" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
 										)}
-										<Button
-											className="bg-themecolor-600 hover:bg-themecolor-500"
-											onClick={() => handleAddMembers(team.id)}
-										>
-											Add Members
-										</Button>
-									</CardFooter>
-								</Card>
-							</MotionDiv>
-						))}
-					</div>
+									/>
+									<FormField
+										control={teamForm.control}
+										name="description"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Description</FormLabel>
+												<FormControl>
+													<Textarea
+														placeholder="Something good about this team is this team is very friendly and completed all the tasks."
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<Button className="w-full bg-themecolor-600 hover:bg-themecolor-500" type="submit">
+										Create Team
+									</Button>
+								</form>
+							</Form>
+						</DialogContent>
+					</Dialog>
+					<AddMembersDialog
+						existingMembers={selectedTeam?.members ?? []}
+						isOpen={isAddMembersModalOpen}
+						onClose={() => {
+							setIsAddMembersModalOpen(false);
+							setSelectedTeamId(null);
+						}}
+						onSubmit={handleAddMembersSubmit}
+					/>
 				</>
 			)}
-			<Dialog onOpenChange={setIsCreateModalOpen} open={isCreateModalOpen}>
-				<DialogContent className="w-[400px]">
-					<DialogHeader>
-						<DialogTitle className="text-center text-2xl font-semibold text-themecolor-600">Create Team</DialogTitle>
-					</DialogHeader>
-					<Form {...teamForm}>
-						<form className="space-y-4 pb-4" onSubmit={teamForm.handleSubmit(handleCreateTeam)}>
-							<FormField
-								control={teamForm.control}
-								name="name"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Team Name</FormLabel>
-										<FormControl>
-											<Input placeholder="Team A" {...field} />
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<FormField
-								control={teamForm.control}
-								name="description"
-								render={({ field }) => (
-									<FormItem>
-										<FormLabel>Description</FormLabel>
-										<FormControl>
-											<Textarea
-												placeholder="Something good about this team is this team is very friendly and completed all the tasks."
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<Button className="w-full bg-themecolor-600 hover:bg-themecolor-500" type="submit">
-								Create Team
-							</Button>
-						</form>
-					</Form>
-				</DialogContent>
-			</Dialog>
-			<AddMembersDialog
-				existingMembers={selectedTeam?.members ?? []}
-				isOpen={isAddMembersModalOpen}
-				onClose={() => {
-					setIsAddMembersModalOpen(false);
-					setSelectedTeamId(null);
-				}}
-				onSubmit={handleAddMembersSubmit}
-			/>
 		</div>
 	);
 };

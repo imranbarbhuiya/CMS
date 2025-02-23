@@ -2,16 +2,21 @@
 
 import Particles, { initParticlesEngine } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 
 export const FallingParticles = ({
 	fullScreen = true,
 	color = '#fff',
 	count = 50,
+	className,
+	speed = 3,
 }: {
+	readonly className?: string;
 	readonly color?: string;
 	readonly count?: number;
 	readonly fullScreen?: boolean;
+	readonly speed?: number;
 }) => {
 	const [init, setInit] = useState(false);
 
@@ -27,7 +32,7 @@ export const FallingParticles = ({
 	return (
 		init && (
 			<Particles
-				className="pointer-events-none"
+				className={clsx('pointer-events-none', className)}
 				options={{
 					particles: {
 						color: {
@@ -48,7 +53,7 @@ export const FallingParticles = ({
 						move: {
 							direction: 'bottom-right',
 							enable: true,
-							speed: { min: 3, max: 5 },
+							speed: { min: speed, max: speed + 2 },
 							straight: true,
 						},
 					},

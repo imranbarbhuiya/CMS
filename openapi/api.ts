@@ -290,10 +290,10 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		get?: never;
-		put?: never;
 		/** Get all users */
-		post: operations['UserController_getAll'];
+		get: operations['UserController_getAll'];
+		put?: never;
+		post?: never;
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -307,10 +307,10 @@ export interface paths {
 			path?: never;
 			cookie?: never;
 		};
-		get?: never;
-		put?: never;
 		/** Get user by ID */
-		post: operations['UserController_getById'];
+		get: operations['UserController_getById'];
+		put?: never;
+		post?: never;
 		delete?: never;
 		options?: never;
 		head?: never;
@@ -326,12 +326,12 @@ export interface paths {
 		};
 		get?: never;
 		put?: never;
-		/** Update user */
-		post: operations['UserController_update'];
+		post?: never;
 		delete?: never;
 		options?: never;
 		head?: never;
-		patch?: never;
+		/** Update user */
+		patch: operations['UserController_update'];
 		trace?: never;
 	};
 	'/{id}/delete': {
@@ -343,9 +343,9 @@ export interface paths {
 		};
 		get?: never;
 		put?: never;
+		post?: never;
 		/** Delete user */
-		post: operations['UserController_delete'];
-		delete?: never;
+		delete: operations['UserController_delete'];
 		options?: never;
 		head?: never;
 		patch?: never;
@@ -389,41 +389,44 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
 	schemas: {
-		AuditLogsDto: {
-			id: string;
-			message: string;
-			userId: string;
-			/**
-			 * @example 'user create' | 'user update' | 'user deleted' | 'user login' | 'user logout' | 'lead created' | 'lead updated' | 'lead deleted' | 'lead assigned' | 'lead unassigned' | 'lead status changed' | 'ticket created' | 'ticket updated' | 'ticket deleted' | 'ticket assigned' | 'ticket unassigned' | 'ticket status changed' | 'team created' | 'team updated' | 'team deleted' | 'team member added' | 'team member removed'
-			 * @enum {string}
-			 */
-			action:
-				| 'user create'
-				| 'user update'
-				| 'user deleted'
-				| 'user login'
-				| 'user logout'
-				| 'lead created'
-				| 'lead updated'
-				| 'lead deleted'
-				| 'lead assigned'
-				| 'lead unassigned'
-				| 'lead status changed'
-				| 'ticket created'
-				| 'ticket updated'
-				| 'ticket deleted'
-				| 'ticket assigned'
-				| 'ticket unassigned'
-				| 'ticket status changed'
-				| 'team created'
-				| 'team updated'
-				| 'team deleted'
-				| 'team member added'
-				| 'team member removed';
-			documentId?: string | null;
-			createdAt: string;
-			updatedAt: string;
-		}[];
+		FindAllAuditLogsDto: {
+			data: {
+				id: string;
+				message: string;
+				userId: string;
+				/**
+				 * @example 'user create' | 'user update' | 'user deleted' | 'user login' | 'user logout' | 'lead created' | 'lead updated' | 'lead deleted' | 'lead assigned' | 'lead unassigned' | 'lead status changed' | 'ticket created' | 'ticket updated' | 'ticket deleted' | 'ticket assigned' | 'ticket unassigned' | 'ticket status changed' | 'team created' | 'team updated' | 'team deleted' | 'team member added' | 'team member removed'
+				 * @enum {string}
+				 */
+				action:
+					| 'user create'
+					| 'user update'
+					| 'user deleted'
+					| 'user login'
+					| 'user logout'
+					| 'lead created'
+					| 'lead updated'
+					| 'lead deleted'
+					| 'lead assigned'
+					| 'lead unassigned'
+					| 'lead status changed'
+					| 'ticket created'
+					| 'ticket updated'
+					| 'ticket deleted'
+					| 'ticket assigned'
+					| 'ticket unassigned'
+					| 'ticket status changed'
+					| 'team created'
+					| 'team updated'
+					| 'team deleted'
+					| 'team member added'
+					| 'team member removed';
+				documentId?: string | null;
+				createdAt: string;
+				updatedAt: string;
+			}[];
+			count: number;
+		};
 		ResponseDto: {
 			message?: string;
 			error?: string;
@@ -478,8 +481,7 @@ export interface components {
 			createdAt: string;
 			updatedAt: string;
 		};
-		GetLeadsDto: {
-			total: number;
+		FindAllLeadsDto: {
 			data: {
 				id: string;
 				internalLeadId: string;
@@ -513,6 +515,7 @@ export interface components {
 				createdAt: string;
 				updatedAt: string;
 			}[];
+			count: number;
 		};
 		UpdateLeadDto: {
 			/**
@@ -537,6 +540,51 @@ export interface components {
 			 */
 			companyId: 'Blue Company' | 'Red Company';
 		};
+		TeamDto: {
+			id: string;
+			name: string;
+			description?: string | null;
+			users: {
+				/**
+				 * @example 'Team Lead' | 'Sales Executive' | 'Service Executive'
+				 * @enum {string}
+				 */
+				role: 'Team Lead' | 'Sales Executive' | 'Service Executive';
+				/** @description Refers to User */
+				userId: string;
+			}[];
+			/**
+			 * @example 'Blue Company' | 'Red Company'
+			 * @enum {string}
+			 */
+			companyId: 'Blue Company' | 'Red Company';
+			createdAt: string;
+			updatedAt: string;
+		};
+		FindAllTeamsDto: {
+			data: {
+				id: string;
+				name: string;
+				description?: string | null;
+				users: {
+					/**
+					 * @example 'Team Lead' | 'Sales Executive' | 'Service Executive'
+					 * @enum {string}
+					 */
+					role: 'Team Lead' | 'Sales Executive' | 'Service Executive';
+					/** @description Refers to User */
+					userId: string;
+				}[];
+				/**
+				 * @example 'Blue Company' | 'Red Company'
+				 * @enum {string}
+				 */
+				companyId: 'Blue Company' | 'Red Company';
+				createdAt: string;
+				updatedAt: string;
+			}[];
+			count: number;
+		};
 		UpdateTeamDto: {
 			users: {
 				/**
@@ -556,6 +604,41 @@ export interface components {
 		CreateTicketDto: {
 			leadId: string;
 			additionalInfo: string;
+		};
+		TicketDto: {
+			id: string;
+			leadId: string;
+			additionalInfo: string;
+			/**
+			 * @example 'Completed' | 'Pending' | 'Follow-Up'
+			 * @enum {string}
+			 */
+			status: 'Completed' | 'Pending' | 'Follow-Up';
+			/** @description Refers to User */
+			assignedTo?: string | null;
+			/** @description Refers to User */
+			raisedBy: string;
+			createdAt: string;
+			updatedAt: string;
+		};
+		FindAllTicketsDto: {
+			data: {
+				id: string;
+				leadId: string;
+				additionalInfo: string;
+				/**
+				 * @example 'Completed' | 'Pending' | 'Follow-Up'
+				 * @enum {string}
+				 */
+				status: 'Completed' | 'Pending' | 'Follow-Up';
+				/** @description Refers to User */
+				assignedTo?: string | null;
+				/** @description Refers to User */
+				raisedBy: string;
+				createdAt: string;
+				updatedAt: string;
+			}[];
+			count: number;
 		};
 		UpdateTicketDto: {
 			/**
@@ -589,22 +672,24 @@ export interface components {
 			password: string;
 			name: string;
 		};
-		UsersDto: {
-			id: string;
-			name: string;
-			email: string;
-			password: string;
-			/**
-			 * @example 'SuperAdmin' | 'Manager' | 'User'
-			 * @enum {string}
-			 */
-			role?: 'SuperAdmin' | 'Manager' | 'User';
-			/** @description Refers to Team */
-			team?: string | null;
-			accessToken?: string | null;
-			createdAt: string;
-			updatedAt: string;
-		}[];
+		FindAllUsersDto: {
+			data: {
+				id: string;
+				name: string;
+				email: string;
+				/**
+				 * @example 'SuperAdmin' | 'Manager' | 'User'
+				 * @enum {string}
+				 */
+				role?: 'SuperAdmin' | 'Manager' | 'User';
+				/** @description Refers to Team */
+				team?: string | null;
+				accessToken?: string | null;
+				createdAt: string;
+				updatedAt: string;
+			}[];
+			count: number;
+		};
 		UpdateUserDto: {
 			email?: string;
 			password?: string;
@@ -635,8 +720,11 @@ export type $defs = Record<string, never>;
 export interface operations {
 	AuditLogController_getAll: {
 		parameters: {
-			query: {
-				userId: string;
+			query?: {
+				page?: number;
+				limit?: number;
+				search?: string;
+				sort?: string;
 			};
 			header: {
 				/** @description Bearer <Token> */
@@ -653,7 +741,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['AuditLogsDto'];
+					'application/json': components['schemas']['FindAllAuditLogsDto'];
 				};
 			};
 			/** @description Returns error if validation fails */
@@ -706,9 +794,11 @@ export interface operations {
 	LeadController_getAll: {
 		parameters: {
 			query?: {
-				search?: string;
 				page?: number;
 				limit?: number;
+				search?: string;
+				sort?: string;
+				export?: boolean;
 			};
 			header: {
 				/** @description Bearer <Token> */
@@ -725,7 +815,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['GetLeadsDto'];
+					'application/json': components['schemas']['FindAllLeadsDto'];
 				};
 			};
 			/** @description Returns error if validation fails */
@@ -866,7 +956,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['LeadDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -934,7 +1026,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['LeadDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1006,7 +1100,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['LeadDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1057,7 +1153,13 @@ export interface operations {
 	};
 	LeadController_getAllAdmin: {
 		parameters: {
-			query?: never;
+			query?: {
+				page?: number;
+				limit?: number;
+				search?: string;
+				sort?: string;
+				export?: boolean;
+			};
 			header: {
 				/** @description Bearer <Token> */
 				Authorization: string;
@@ -1072,7 +1174,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['FindAllLeadsDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1123,7 +1227,13 @@ export interface operations {
 	};
 	TeamController_getAll: {
 		parameters: {
-			query?: never;
+			query?: {
+				page?: number;
+				limit?: number;
+				search?: string;
+				sort?: string;
+				export?: boolean;
+			};
 			header: {
 				/** @description Bearer <Token> */
 				Authorization: string;
@@ -1138,7 +1248,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['FindAllTeamsDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1208,7 +1320,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TeamDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1276,7 +1390,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TeamDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1348,7 +1464,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TeamDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1469,7 +1587,13 @@ export interface operations {
 	};
 	TicketController_getAllAdmin: {
 		parameters: {
-			query?: never;
+			query?: {
+				page?: number;
+				limit?: number;
+				search?: string;
+				sort?: string;
+				export?: boolean;
+			};
 			header: {
 				/** @description Bearer <Token> */
 				Authorization: string;
@@ -1484,7 +1608,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['FindAllTicketsDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1554,7 +1680,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TicketDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1622,7 +1750,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TicketDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1673,7 +1803,13 @@ export interface operations {
 	};
 	TicketController_getAll: {
 		parameters: {
-			query?: never;
+			query?: {
+				page?: number;
+				limit?: number;
+				search?: string;
+				sort?: string;
+				export?: boolean;
+			};
 			header: {
 				/** @description Bearer <Token> */
 				Authorization: string;
@@ -1688,7 +1824,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['FindAllTicketsDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1756,7 +1894,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TicketDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1824,7 +1964,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['ResponseDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -1896,7 +2038,9 @@ export interface operations {
 				headers: {
 					[name: string]: unknown;
 				};
-				content?: never;
+				content: {
+					'application/json': components['schemas']['TicketDto'];
+				};
 			};
 			/** @description Returns error if validation fails */
 			400: {
@@ -2221,7 +2365,13 @@ export interface operations {
 	};
 	UserController_getAll: {
 		parameters: {
-			query?: never;
+			query?: {
+				page?: number;
+				limit?: number;
+				search?: string;
+				sort?: string;
+				export?: boolean;
+			};
 			header: {
 				/** @description Bearer <Token> */
 				Authorization: string;
@@ -2237,7 +2387,7 @@ export interface operations {
 					[name: string]: unknown;
 				};
 				content: {
-					'application/json': components['schemas']['UsersDto'];
+					'application/json': components['schemas']['FindAllUsersDto'];
 				};
 			};
 			/** @description Returns error if validation fails */

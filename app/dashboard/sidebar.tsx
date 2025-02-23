@@ -15,7 +15,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// import { FallingParticles } from '@/components/FallingParticles';
+import { FallingParticles } from '@/components/FallingParticles';
 import {
 	Sidebar,
 	SidebarContent,
@@ -69,8 +69,7 @@ export function MainSidebar() {
 						<GalleryVerticalEnd className="size-4 text-sidebar-primary-foreground" />
 					</div>
 				) : (
-					<div className="flex items-center gap-2 self-stretch rounded-[8px] p-2">
-						{/* <FallingParticles count={100} /> */}
+					<div className="relative flex items-center gap-2 self-stretch rounded-[8px] p-2">
 						<div className="rounded-lg bg-sidebar-primary p-2">
 							<GalleryVerticalEnd className="size-4 text-sidebar-primary-foreground" />
 						</div>
@@ -80,6 +79,7 @@ export function MainSidebar() {
 							</span>
 							<span className="text-ellipsis text-xs font-normal leading-4 text-white">Advertising wing Inc</span>
 						</div>
+						<FallingParticles className="absolute inset-0" count={50} fullScreen={false} speed={1} />
 					</div>
 				)}
 			</SidebarHeader>

@@ -22,5 +22,6 @@ export const useUser = () => {
 
 			return data;
 		},
+		enabled: Boolean(token),
 	});
 };

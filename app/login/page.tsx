@@ -45,7 +45,20 @@ const LoginPage = () => {
 			if (res.error) throw new Error(res.error.message ?? 'An error occurred');
 
 			setCookie('token', res.data.accessToken!);
-			if (data.password === 'a') setCookie('group', 'rose');
+
+			const teamRes = await Api.GET('/teams/{id}', {
+				params: {
+					header: {
+						Authorization: `Bearer ${res.data.accessToken}`,
+					},
+					path: {
+						id: res.data.team!,
+					},
+				},
+			});
+
+			if (teamRes.data?.companyId === 'Red Company') setCookie('group', 'rose');
+			else setCookie('group', 'blue');
 
 			router.push('/dashboard/leads');
 

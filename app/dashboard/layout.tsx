@@ -1,5 +1,6 @@
 import { MainHeader } from '@/app/dashboard/header';
 import { MainSidebar } from '@/app/dashboard/sidebar';
+import { SocketProvider } from '@/components/SocketProvider';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { isRoseGroupFlag } from '@/lib/group-flag';
 
@@ -9,13 +10,15 @@ export default async function DashboardLayout({ children }: { readonly children:
 	return (
 		<main className={isRoseGroup ? 'rose' : ''}>
 			<SidebarProvider>
-				<div className="flex h-screen w-full">
-					<MainSidebar />
-					<div className="flex w-full flex-1 flex-col">
-						<MainHeader />
-						<main className="flex-1 overflow-y-auto">{children}</main>
+				<SocketProvider>
+					<div className="flex h-screen w-full">
+						<MainSidebar />
+						<div className="flex w-full flex-1 flex-col">
+							<MainHeader />
+							<main className="flex-1 overflow-y-auto">{children}</main>
+						</div>
 					</div>
-				</div>
+				</SocketProvider>
 			</SidebarProvider>
 		</main>
 	);

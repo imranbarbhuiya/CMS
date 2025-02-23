@@ -12,69 +12,69 @@ import type { Ticket } from '@/app/dashboard/tickets/ticket-list';
 
 const MOCK_TICKETS: Ticket[] = [
 	{
-		ticketId: '0001',
+		id: '0001',
 		name: 'Priya Sharma',
 		email: 'priya.sharma@email.com',
 		phone: '9210823038',
 		subscriptionDetails: '2 Years',
 		billingAddress: '402 Greenfield Complex',
 		paymentMode: 'Cheque',
-		status: 'completed',
+		status: 'Completed',
 		additionalNote:
 			'Customer showed interest in upgrading to the premium package within the next quarter. Offered a 10% discount as an incentive, and they requested a follow-up call in two weeks to discuss further details.',
 	},
 	{
-		ticketId: '0002',
+		id: '0002',
 		name: 'Priya Sharma',
 		email: 'priya.sharma@email.com',
 		phone: '9210823038',
 		subscriptionDetails: '2 Years',
 		billingAddress: '402 Greenfield Complex',
 		paymentMode: 'Cheque',
-		status: 'pending',
+		status: 'Pending',
 	},
 	{
-		ticketId: '0003',
+		id: '0003',
 		name: 'Priya Sharma',
 		email: 'priya.sharma@email.com',
 		phone: '9210823038',
 		subscriptionDetails: '2 Years',
 		billingAddress: '402 Greenfield Complex',
 		paymentMode: 'Cheque',
-		status: 'follow-up',
+		status: 'Follow-Up',
 		additionalNote: 'Customer showed interest in upgrading to the premium package within the next quarter.',
 	},
 	{
-		ticketId: '0004',
+		id: '0004',
 		name: 'Priya Sharma',
 		email: 'priya.sharma@email.com',
 		phone: '9210823038',
 		subscriptionDetails: '2 Years',
 		billingAddress: '402 Greenfield Complex',
 		paymentMode: 'Cheque',
-		status: 'pending',
+		status: 'Pending',
 		additionalNote: 'Customer showed interest in upgrading to the premium package within the next quarter.',
 	},
 	{
-		ticketId: '0005',
+		id: '0005',
 		name: 'Priya Sharma',
 		email: 'priya.sharma@email.com',
 		phone: '9210823038',
 		subscriptionDetails: '2 Years',
 		billingAddress: '402 Greenfield Complex',
 		paymentMode: 'Cheque',
-		status: 'completed',
+		status: 'Completed',
 		additionalNote: 'Customer showed interest in upgrading to the premium package within the next quarter.',
 	},
 	{
-		ticketId: '0006',
+		id: '0006',
 		name: 'Priya Sharma',
 		email: 'priya.sharma@email.com',
 		phone: '9210823038',
 		subscriptionDetails: '2 Years',
 		billingAddress: '402 Greenfield Complex',
 		paymentMode: 'Cheque',
-		status: 'follow-up',
+		status: 'Follow-Up',
 		additionalNote: 'Customer showed interest in upgrading to the premium package within the next quarter.',
 	},
 ];
@@ -83,16 +83,16 @@ export default function TicketOverviewPage() {
 	const [tickets, setTickets] = useState<Ticket[]>(MOCK_TICKETS);
 	const [searchQuery, setSearchQuery] = useState('');
 
-	const handleStatusChange = (ticketId: string, newStatus: Ticket['status']) => {
+	const handleStatusChange = (id: string, newStatus: Ticket['status']) => {
 		setTickets((prevTickets) =>
-			prevTickets.map((ticket) => (ticket.ticketId === ticketId ? { ...ticket, status: newStatus } : ticket)),
+			prevTickets.map((ticket) => (ticket.id === id ? { ...ticket, status: newStatus } : ticket)),
 		);
 	};
 
 	const filteredTickets = tickets.filter(
 		(ticket) =>
 			ticket.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			ticket.ticketId.toLowerCase().includes(searchQuery.toLowerCase()),
+			ticket.id.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
 	return (

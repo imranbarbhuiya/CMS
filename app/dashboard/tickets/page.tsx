@@ -1,59 +1,123 @@
+'use client';
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowDownWideNarrow, Search } from 'lucide-react';
+import { useState, useRef } from 'react';
 
 import { TicketList } from '@/app/dashboard/tickets/ticket-list';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToken } from '@/hooks/use-token';
+import { Api } from '@/lib/fetch';
 
 import type { Ticket } from '@/app/dashboard/tickets/ticket-list';
+import type { components } from '@/openapi/api';
 
-const MOCK_TICKETS: Ticket[] = [
-	{
-		ticketId: '0001',
-		name: 'Priya Sharma',
-		email: 'priya.sharma@email.com',
-		phone: '9210823038',
-		subscriptionDetails: '2 Years',
-		billingAddress: '402 Greenfield Complex',
-		paymentMode: 'Cheque',
-		status: 'completed',
-		additionalNote:
-			'Customer showed interest in upgrading to the premium package within the next quarter. Offered a 10% discount as an incentive, and they requested a follow-up call in two weeks to discuss further details.',
-	},
-	{
-		ticketId: '0002',
-		name: 'Priya Sharma',
-		email: 'priya.sharma@email.com',
-		phone: '9210823038',
-		subscriptionDetails: '2 Years',
-		billingAddress: '402 Greenfield Complex',
-		paymentMode: 'Cheque',
-		status: 'pending',
-	},
-	{
-		ticketId: '0003',
-		name: 'Priya Sharma',
-		email: 'priya.sharma@email.com',
-		phone: '9210823038',
-		subscriptionDetails: '2 Years',
-		billingAddress: '402 Greenfield Complex',
-		paymentMode: 'Cheque',
-		status: 'follow-up',
-		additionalNote: 'Customer showed interest in upgrading to the premium package within the next quarter.',
-	},
-];
+type UpdateTicketDto = components['schemas']['UpdateTicketDto'];
+
+interface TicketResponse {
+	data: Ticket[];
+	total: number;
+}
 
 export default function TicketPage() {
+	const { data: token } = useToken();
+	const [currentPage, setCurrentPage] = useState(1);
+	const searchInputRef = useRef<HTMLInputElement>(null);
+	const [searchTerm, setSearchTerm] = useState('');
+
+	const { data, isLoading } = useQuery({
+		queryKey: ['/tickets', currentPage, searchTerm],
+		queryFn: async () => {
+			const { data, error } = await Api.GET('/tickets/my', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+				},
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
+		enabled: Boolean(token),
+	});
+
+	const queryClient = useQueryClient();
+
+	const { mutate: updateStatus } = useMutation({
+		mutationFn: async ({ status, ticketId }: { status: NonNullable<UpdateTicketDto['status']>; ticketId: string }) => {
+			const { data, error } = await Api.PATCH('/tickets/{id}', {
+				params: {
+					header: {
+						Authorization: `Bearer ${token}`,
+					},
+					path: { id: ticketId },
+				},
+				body: { status },
+			});
+
+			if (error) throw new Error(error.message ?? 'An error occurred');
+
+			return data;
+		},
+		onMutate: async ({ ticketId, status }) => {
+			await queryClient.cancelQueries({ queryKey: ['/tickets'] });
+
+			const previousTickets = queryClient.getQueryData<TicketResponse>(['/tickets']);
+
+			queryClient.setQueryData<TicketResponse>(['/tickets'], (old) => {
+				if (!old) return old;
+				return {
+					...old,
+					data: old.data.map((ticket) => (ticket.id === ticketId ? { ...ticket, status } : ticket)),
+				};
+			});
+
+			return { previousTickets };
+		},
+		onError: (_, __, context) =>
+			context?.previousTickets && queryClient.setQueryData<TicketResponse>(['/tickets'], context.previousTickets),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: ['/tickets'] });
+		},
+	});
+
+	const tickets = data?.data ?? [];
+
+	const handleSearch = () => {
+		setSearchTerm(searchInputRef.current?.value ?? '');
+		setCurrentPage(1);
+	};
+
 	return (
 		<div className="space-y-4 p-3 md:p-8">
 			<div className="flex items-center justify-start">
 				<h1 className="text-3xl font-semibold leading-9 tracking-[-0.75px] text-primary">Tickets</h1>
 			</div>
-			{MOCK_TICKETS.length ? (
+			{isLoading ? (
+				<div className="flex items-center justify-center pt-20">
+					<div className="size-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
+				</div>
+			) : tickets.length ? (
 				<>
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<Input className="max-w-sm" placeholder="Search ticket using name, id..." />
-							<Button className="text-sm font-medium leading-6 text-primary" size="sm" variant="secondary">
+							<Input
+								className="max-w-sm"
+								onKeyDown={(ev) => {
+									if (ev.key === 'Enter') handleSearch();
+								}}
+								placeholder="Search ticket using name, id..."
+								ref={searchInputRef}
+							/>
+							<Button
+								className="text-sm font-medium leading-6 text-primary"
+								onClick={handleSearch}
+								size="sm"
+								variant="secondary"
+							>
 								<Search className="size-4" />
 								Search
 							</Button>
@@ -63,7 +127,7 @@ export default function TicketPage() {
 							<ArrowDownWideNarrow className="size-4" />
 						</Button>
 					</div>
-					<TicketList tickets={MOCK_TICKETS} />
+					<TicketList onStatusChangeAction={updateStatus} tickets={tickets} />
 				</>
 			) : (
 				<div className="flex flex-col items-center justify-center gap-1.5 pt-20 text-[#2563EB] [&:is(.rose_*)]:text-[#E11D48]">
