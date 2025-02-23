@@ -4,19 +4,16 @@ import { Api } from '@/lib/fetch';
 
 import { useToken } from './use-token';
 
-export const useTeam = (team?: string | null) => {
+export const useTeam = () => {
 	const { data: token } = useToken();
 
 	return useQuery({
-		queryKey: ['/teams/{id}'],
+		queryKey: ['/teams/me'],
 		queryFn: async () => {
-			const { data, error } = await Api.GET('/teams/{id}', {
+			const { data, error } = await Api.GET('/teams/me', {
 				params: {
 					header: {
 						Authorization: `Bearer ${token}`,
-					},
-					path: {
-						id: team!,
 					},
 				},
 			});
@@ -25,6 +22,6 @@ export const useTeam = (team?: string | null) => {
 
 			return data;
 		},
-		enabled: Boolean(token && team),
+		enabled: Boolean(token),
 	});
 };

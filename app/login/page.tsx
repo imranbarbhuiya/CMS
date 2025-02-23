@@ -49,13 +49,10 @@ const LoginPage = () => {
 
 			setCookie('token', res.data.accessToken!);
 
-			const teamRes = await Api.GET('/teams/{id}', {
+			const teamRes = await Api.GET('/teams/me', {
 				params: {
 					header: {
 						Authorization: `Bearer ${res.data.accessToken}`,
-					},
-					path: {
-						id: res.data.team!,
 					},
 				},
 			});

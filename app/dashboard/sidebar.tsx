@@ -56,7 +56,7 @@ export function MainSidebar() {
 		},
 	});
 
-	const { data: team } = useTeam(user?.team);
+	const { data: team } = useTeam();
 
 	const tabs = [];
 
@@ -94,7 +94,7 @@ export function MainSidebar() {
 		);
 	}
 
-	if (user?.role === 'SuperAdmin') {
+	if (isSuperAdmin) {
 		tabs.push(
 			{
 				name: 'Manage User',
